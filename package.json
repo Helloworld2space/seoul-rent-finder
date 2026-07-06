@@ -1,0 +1,14 @@
+{
+  "name": "seoul-rent-finder",
+  "version": "1.0.0",
+  "description": "서울 전월세 실거래가 탐색기",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "test": "node tests/normalize.test.js && node tests/broker-normalize.test.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "express": "^4.18.0"
+  }
+}

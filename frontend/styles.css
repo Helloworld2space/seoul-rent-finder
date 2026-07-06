@@ -1,0 +1,285 @@
+/* ── 디자인 토큰 ─────────────────────────────── */
+:root {
+  --color-bg: #f5f5f7;
+  --color-surface: #ffffff;
+  --color-border: #d1d1d6;
+  --color-primary: #007aff;
+  --color-primary-hover: #0062cc;
+  --color-danger: #ff3b30;
+  --color-text: #1c1c1e;
+  --color-text-muted: #6c6c70;
+  --color-chip-active-bg: #007aff;
+  --color-chip-active-text: #ffffff;
+  --color-jeonse: #34c759;
+  --color-wolse: #ff9500;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-card: 0 1px 4px rgba(0,0,0,0.08);
+
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ── 리셋 ─────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── 레이아웃 ─────────────────────────────────── */
+#app { max-width: 1200px; margin: 0 auto; padding: 24px 16px 64px; }
+
+.site-header { margin-bottom: 24px; }
+.site-header h1 { font-size: 22px; font-weight: 700; }
+.site-header .subtitle { color: var(--color-text-muted); font-size: 13px; margin-top: 4px; }
+
+/* ── 검색 패널 ────────────────────────────────── */
+.search-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-card);
+}
+
+.field-group { margin-bottom: 16px; }
+.field-group:last-child { margin-bottom: 0; }
+.field-group.inline { margin-bottom: 0; }
+.field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+.hint { font-weight: 400; text-transform: none; letter-spacing: 0; }
+
+/* ── 칩 ───────────────────────────────────────── */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.chip:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.chip.active {
+  background: var(--color-chip-active-bg);
+  color: var(--color-chip-active-text);
+  border-color: var(--color-chip-active-bg);
+}
+.chips.small .chip { padding: 4px 10px; font-size: 12px; }
+
+/* ── 셀렉트 / 인풋 ────────────────────────────── */
+.select, .input-num {
+  padding: 7px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.select:focus, .input-num:focus { border-color: var(--color-primary); }
+.select.small { padding: 5px 8px; font-size: 12px; }
+.input-num { width: 120px; }
+.range-inputs { display: flex; align-items: center; gap: 6px; }
+
+/* ── 버튼 ─────────────────────────────────────── */
+.btn-primary {
+  padding: 9px 24px;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-top: 4px;
+}
+.btn-primary:hover { background: var(--color-primary-hover); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-secondary {
+  padding: 8px 20px;
+  background: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-secondary:hover { background: rgba(0,122,255,0.06); }
+
+/* ── 필터 패널 ────────────────────────────────── */
+.filter-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-card);
+}
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-end;
+}
+.result-summary {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* ── 결과 테이블 ──────────────────────────────── */
+.results-section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+.table-wrapper { overflow-x: auto; }
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.results-table th {
+  background: #f2f2f7;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+}
+.results-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  white-space: nowrap;
+}
+.results-table tbody tr:hover { background: #f9f9fb; }
+.results-table tbody tr:last-child td { border-bottom: none; }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.badge-jeonse { background: #e8fdf0; color: #1a7a37; }
+.badge-wolse  { background: #fff4e5; color: #a05c00; }
+.badge-new    { background: #e5f0ff; color: #005bb5; }
+.badge-renew  { background: #f5e5ff; color: #6a00b5; }
+
+.amount { font-variant-numeric: tabular-nums; }
+
+.load-more-wrap { padding: 16px; text-align: center; }
+
+/* ── 행 액션 버튼 ─────────────────────────────── */
+.row-actions { display: flex; gap: 4px; }
+.action-btn {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 11px;
+  font-family: var(--font);
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
+}
+.action-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+/* ── 모달 ─────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 100;
+}
+.modal {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  max-width: 560px;
+  width: 100%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+.modal-header h2 { font-size: 16px; font-weight: 700; }
+.modal-close {
+  border: none;
+  background: none;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 0 4px;
+}
+.modal-close:hover { color: var(--color-text); }
+.modal-body { overflow-y: auto; padding: 4px 20px 12px; }
+.modal-footer {
+  padding: 10px 20px;
+  border-top: 1px solid var(--color-border);
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+.modal-msg { padding: 12px 0; color: var(--color-text-muted); font-size: 13px; }
+.modal-msg.error { color: var(--color-danger); }
+
+.broker-item { padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+.broker-item:last-child { border-bottom: none; }
+.broker-name { font-weight: 600; font-size: 13px; }
+.broker-agent { font-weight: 400; font-size: 12px; color: var(--color-text-muted); }
+.broker-addr { font-size: 12px; color: var(--color-text-muted); margin: 2px 0 4px; }
+.broker-phone { font-size: 13px; color: var(--color-primary); text-decoration: none; }
+.broker-phone:hover { text-decoration: underline; }
+.broker-phone.muted { color: var(--color-text-muted); }
+
+/* ── 상태 메시지 ──────────────────────────────── */
+.status-msg {
+  text-align: center;
+  padding: 48px 16px;
+  color: var(--color-text-muted);
+  font-size: 15px;
+}
+.status-msg.error { color: var(--color-danger); }
+
+/* ── 유틸 ─────────────────────────────────────── */
+.hidden { display: none !important; }

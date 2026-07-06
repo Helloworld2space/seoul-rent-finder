@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>서울 전월세 실거래가 탐색기</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="site-header">
+      <h1>서울 전월세 실거래가 탐색기</h1>
+      <p class="subtitle">국토교통부 공식 실거래가 데이터 기반</p>
+    </header>
+
+    <main>
+      <!-- 검색 패널 -->
+      <section class="search-panel" aria-label="검색 조건">
+        <!-- 자치구 선택 -->
+        <div class="field-group">
+          <label class="field-label">자치구 <span class="hint">(미선택 시 서울 전체)</span></label>
+          <div id="district-chips" class="chips" role="group" aria-label="자치구 선택"></div>
+        </div>
+
+        <!-- 조회 기간 -->
+        <div class="field-group">
+          <label class="field-label" for="months-select">조회 기간</label>
+          <select id="months-select" class="select">
+            <option value="1">최근 1개월</option>
+            <option value="3" selected>최근 3개월</option>
+            <option value="6">최근 6개월</option>
+            <option value="12">최근 12개월</option>
+          </select>
+        </div>
+
+        <button id="search-btn" class="btn-primary">조회</button>
+      </section>
+
+      <!-- 필터·정렬 패널 (데이터 로드 후 표시) -->
+      <section id="filter-panel" class="filter-panel hidden" aria-label="필터 및 정렬">
+        <div class="filter-row">
+          <!-- 전/월세 -->
+          <div class="field-group inline">
+            <label class="field-label">유형</label>
+            <div class="chips small" role="group">
+              <button class="chip active" data-rent-type="">전체</button>
+              <button class="chip" data-rent-type="전세">전세</button>
+              <button class="chip" data-rent-type="월세">월세</button>
+            </div>
+          </div>
+
+          <!-- 보증금 범위 -->
+          <div class="field-group inline">
+            <label class="field-label">보증금</label>
+            <div class="range-inputs">
+              <input type="number" id="deposit-min" class="input-num" placeholder="최소 (만원)" min="0" step="1000" />
+              <span>~</span>
+              <input type="number" id="deposit-max" class="input-num" placeholder="최대 (만원)" min="0" step="1000" />
+            </div>
+          </div>
+
+          <!-- 면적 범위 -->
+          <div class="field-group inline">
+            <label class="field-label">면적 (㎡)</label>
+            <div class="range-inputs">
+              <input type="number" id="area-min" class="input-num" placeholder="최소" min="0" />
+              <span>~</span>
+              <input type="number" id="area-max" class="input-num" placeholder="최대" min="0" />
+            </div>
+          </div>
+
+          <!-- 정렬 -->
+          <div class="field-group inline">
+            <label class="field-label" for="sort-select">정렬</label>
+            <select id="sort-select" class="select small">
+              <option value="dealDate-desc">계약일 최신순</option>
+              <option value="dealDate-asc">계약일 오래된순</option>
+              <option value="deposit-asc">보증금 낮은순</option>
+              <option value="deposit-desc">보증금 높은순</option>
+              <option value="area-asc">면적 작은순</option>
+              <option value="area-desc">면적 큰순</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="result-summary" id="result-summary"></div>
+      </section>
+
+      <!-- 결과 테이블 -->
+      <section id="results-section" class="results-section hidden">
+        <div class="table-wrapper">
+          <table id="results-table" class="results-table">
+            <thead>
+              <tr>
+                <th>자치구</th>
+                <th>법정동</th>
+                <th>아파트</th>
+                <th>유형</th>
+                <th>보증금</th>
+                <th>월세</th>
+                <th>면적(㎡)</th>
+                <th>평수</th>
+                <th>층</th>
+                <th>건축년도</th>
+                <th>계약일</th>
+                <th>계약구분</th>
+                <th>액션</th>
+              </tr>
+            </thead>
+            <tbody id="results-body"></tbody>
+          </table>
+        </div>
+        <div id="load-more-wrap" class="load-more-wrap hidden">
+          <button id="load-more-btn" class="btn-secondary">더 보기</button>
+        </div>
+      </section>
+
+      <!-- 상태 메시지 -->
+      <div id="status-msg" class="status-msg hidden" role="status"></div>
+    </main>
+  </div>
+
+  <!-- 중개업소 모달 -->
+  <div id="broker-modal" class="modal-overlay hidden">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="broker-modal-title">
+      <div class="modal-header">
+        <h2 id="broker-modal-title"></h2>
+        <button id="broker-modal-close" class="modal-close" aria-label="닫기">&times;</button>
+      </div>
+      <div id="broker-modal-body" class="modal-body"></div>
+      <div class="modal-footer">출처: 서울 열린데이터광장 부동산 중개업소 정보 (영업중만 표시)</div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
