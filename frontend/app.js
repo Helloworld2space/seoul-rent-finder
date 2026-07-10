@@ -17,12 +17,13 @@ const PAGE_SIZE = 100;
 async function fetchDistricts() {
   const res = await fetch('/api/districts');
   if (!res.ok) throw new Error('구 목록 조회 실패');
-  return res.json();
+  return res.json(); // { regions, districts }
 }
 
-async function fetchDeals(districtCodes, months) {
+async function fetchDeals(districtCodes, months, types) {
   const params = new URLSearchParams({ months: String(months) });
   if (districtCodes.length > 0) params.set('districts', districtCodes.join(','));
+  if (types.length > 0) params.set('types', types.join(','));
   const res = await fetch(`/api/search?${params}`);
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -62,28 +63,51 @@ function filterSort(deals, filter, sort) {
   return list;
 }
 
-/* ── 렌더: 자치구 칩 ──────────────────────────── */
+/* ── 렌더: 지역 탭 + 자치구 칩 ────────────────── */
 let selectedDistricts = new Set();
+let allDistricts = [];          // [{code, name, region}]
+let activeRegion = 'seoul';
+let selectedTypes = new Set(['apt']);
 
-function renderDistrictChips(districts) {
-  const container = document.getElementById('district-chips');
+function renderRegionTabs(regions) {
+  const container = document.getElementById('region-tabs');
   container.innerHTML = '';
-  districts.forEach((d) => {
+  regions.forEach((r) => {
     const btn = document.createElement('button');
-    btn.className = 'chip';
-    btn.textContent = d.name;
-    btn.dataset.code = d.code;
+    btn.className = `chip region-tab${r.id === activeRegion ? ' active' : ''}`;
+    btn.textContent = r.name;
+    btn.dataset.region = r.id;
     btn.addEventListener('click', () => {
-      if (selectedDistricts.has(d.code)) {
-        selectedDistricts.delete(d.code);
-        btn.classList.remove('active');
-      } else {
-        selectedDistricts.add(d.code);
-        btn.classList.add('active');
-      }
+      activeRegion = r.id;
+      container.querySelectorAll('.region-tab').forEach((b) => b.classList.toggle('active', b.dataset.region === r.id));
+      renderDistrictChips();
     });
     container.appendChild(btn);
   });
+}
+
+// 현재 활성 지역의 구 칩만 표시. 선택 상태(selectedDistricts)는 지역을 넘어 유지된다.
+function renderDistrictChips() {
+  const container = document.getElementById('district-chips');
+  container.innerHTML = '';
+  allDistricts
+    .filter((d) => d.region === activeRegion)
+    .forEach((d) => {
+      const btn = document.createElement('button');
+      btn.className = `chip${selectedDistricts.has(d.code) ? ' active' : ''}`;
+      btn.textContent = d.name;
+      btn.dataset.code = d.code;
+      btn.addEventListener('click', () => {
+        if (selectedDistricts.has(d.code)) {
+          selectedDistricts.delete(d.code);
+          btn.classList.remove('active');
+        } else {
+          selectedDistricts.add(d.code);
+          btn.classList.add('active');
+        }
+      });
+      container.appendChild(btn);
+    });
 }
 
 /* ── 렌더: 결과 테이블 ────────────────────────── */
@@ -97,12 +121,13 @@ function renderResults(deals, append = false) {
       <td>${esc(d.district)}</td>
       <td>${esc(d.dong)}</td>
       <td>${esc(d.aptName)}</td>
+      <td><span class="badge badge-prop">${esc(d.propertyType ?? '아파트')}</span></td>
       <td><span class="badge ${d.rentType === '전세' ? 'badge-jeonse' : 'badge-wolse'}">${esc(d.rentType)}</span></td>
       <td class="amount">${fmtAmount(d.deposit)}</td>
       <td class="amount">${d.monthlyRent > 0 ? fmtAmount(d.monthlyRent) : '-'}</td>
       <td>${d.area}</td>
       <td>${d.pyeong}</td>
-      <td>${d.floor}</td>
+      <td>${d.floor || '-'}</td>
       <td>${d.buildYear || '-'}</td>
       <td>${esc(d.dealDate)}</td>
       <td>${d.contractType ? `<span class="badge ${d.contractType === '신규' ? 'badge-new' : 'badge-renew'}">${esc(d.contractType)}</span>` : '-'}</td>
@@ -127,8 +152,14 @@ function buildActionsCell(d) {
   const brokerBtn = document.createElement('button');
   brokerBtn.className = 'action-btn';
   brokerBtn.textContent = '중개업소';
-  brokerBtn.title = '근처 부동산 중개업소 연락처';
-  brokerBtn.addEventListener('click', () => openBrokerModal(d));
+  // 중개업소 데이터 출처(서울 열린데이터광장)가 서울 한정
+  if (regionOfDistrict(d.district) === 'seoul') {
+    brokerBtn.title = '근처 부동산 중개업소 연락처';
+    brokerBtn.addEventListener('click', () => openBrokerModal(d));
+  } else {
+    brokerBtn.disabled = true;
+    brokerBtn.title = '중개업소 조회는 서울만 지원합니다';
+  }
 
   const twinLink = document.createElement('a');
   twinLink.className = 'action-btn';
@@ -157,12 +188,13 @@ function clamp(v, min, max) {
 function twinforgeUrl(d) {
   const w = clamp(Math.round(Math.sqrt((d.area * 4) / 3) * 10) / 10, 2, 12);
   const depth = clamp(Math.round((d.area / w) * 10) / 10, 2, 12);
+  const regionNames = { seoul: '서울', gyeonggi: '경기', incheon: '인천' };
   const payload = {
     v: 1,
     n: `${d.aptName} ${d.pyeong}평`,
     w,
     d: depth,
-    rg: '서울',
+    rg: regionNames[regionOfDistrict(d.district)] ?? '서울',
     fl: clamp(d.floor || 1, 1, 50),
     zn: [],
     it: [],
@@ -171,8 +203,14 @@ function twinforgeUrl(d) {
   return `${TWINFORGE_URL}/?share=${btoa(encodeURIComponent(JSON.stringify(payload)))}`;
 }
 
+/** 지역명("강남구", "수원시 장안구") → region id. 목록에 없으면 'seoul' 취급 안 함 */
+function regionOfDistrict(districtName) {
+  return districtRegionByName[districtName] ?? null;
+}
+
 /* ── 중개업소 모달 ────────────────────────────── */
 let districtCodeByName = {};        // "강남구" → "11680"
+let districtRegionByName = {};      // "강남구" → "seoul"
 const brokerCache = new Map();      // "코드:동" → /api/brokers 응답
 const BROKER_DISPLAY_LIMIT = 100;
 
@@ -271,24 +309,51 @@ function refreshView() {
   state.page = 0;
 
   updateResultSummary(deals.length, state.rawDeals.length);
+  renderStats(deals);
   showPage(deals, 0, false);
 
   document.getElementById('filter-panel').classList.remove('hidden');
+  document.getElementById('stats-section').classList.remove('hidden');
   document.getElementById('results-section').classList.remove('hidden');
+}
+
+/* ── 렌더: 지역별 평균 (stats.js의 순수함수 사용) ── */
+function renderStats(deals) {
+  const tbody = document.getElementById('stats-body');
+  tbody.innerHTML = '';
+  computeRegionStats(deals).forEach((s) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${esc(s.district)}</td>
+      <td class="amount">${s.total.toLocaleString()}</td>
+      <td class="amount">${s.jeonse.count.toLocaleString()}</td>
+      <td class="amount">${s.jeonse.count ? fmtAmount(s.jeonse.avgDeposit) : '-'}</td>
+      <td class="amount">${s.wolse.count.toLocaleString()}</td>
+      <td class="amount">${s.wolse.count ? fmtAmount(s.wolse.avgDeposit) : '-'}</td>
+      <td class="amount">${s.wolse.count ? fmtAmount(s.wolse.avgRent) : '-'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
 }
 
 /* ── 이벤트 바인딩 ────────────────────────────── */
 document.getElementById('search-btn').addEventListener('click', async () => {
   const months = parseInt(document.getElementById('months-select').value, 10);
-  const codes = [...selectedDistricts];
+  // 구 미선택 시 현재 지역 탭 전체를 명시적으로 전송
+  const codes =
+    selectedDistricts.size > 0
+      ? [...selectedDistricts]
+      : allDistricts.filter((d) => d.region === activeRegion).map((d) => d.code);
+  const types = [...selectedTypes];
 
   setStatus('데이터를 불러오는 중…');
   document.getElementById('search-btn').disabled = true;
   document.getElementById('filter-panel').classList.add('hidden');
+  document.getElementById('stats-section').classList.add('hidden');
   document.getElementById('results-section').classList.add('hidden');
 
   try {
-    const data = await fetchDeals(codes, months);
+    const data = await fetchDeals(codes, months, types);
     state.rawDeals = data.results;
     clearStatus();
     if (state.rawDeals.length === 0) {
@@ -301,6 +366,21 @@ document.getElementById('search-btn').addEventListener('click', async () => {
   } finally {
     document.getElementById('search-btn').disabled = false;
   }
+});
+
+// 주거 유형 칩 (다중선택, 최소 1개 유지)
+document.querySelectorAll('[data-prop-type]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const t = btn.dataset.propType;
+    if (selectedTypes.has(t)) {
+      if (selectedTypes.size === 1) return; // 전부 해제 방지
+      selectedTypes.delete(t);
+      btn.classList.remove('active');
+    } else {
+      selectedTypes.add(t);
+      btn.classList.add('active');
+    }
+  });
 });
 
 // 렌트 유형 칩
@@ -371,9 +451,12 @@ function fmtAmount(won) {
 /* ── 초기화 ───────────────────────────────────── */
 (async () => {
   try {
-    const districts = await fetchDistricts();
-    renderDistrictChips(districts);
+    const { regions, districts } = await fetchDistricts();
+    allDistricts = districts;
     districtCodeByName = Object.fromEntries(districts.map((d) => [d.name, d.code]));
+    districtRegionByName = Object.fromEntries(districts.map((d) => [d.name, d.region]));
+    renderRegionTabs(regions);
+    renderDistrictChips();
   } catch (err) {
     setStatus('구 목록을 불러오지 못했습니다. 서버가 실행 중인지 확인하세요.', true);
   }

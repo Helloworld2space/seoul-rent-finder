@@ -191,10 +191,46 @@ body {
 .badge-wolse  { background: #fff4e5; color: #a05c00; }
 .badge-new    { background: #e5f0ff; color: #005bb5; }
 .badge-renew  { background: #f5e5ff; color: #6a00b5; }
+.badge-prop   { background: #f2f2f7; color: #3a3a3c; }
 
 .amount { font-variant-numeric: tabular-nums; }
 
 .load-more-wrap { padding: 16px; text-align: center; }
+
+/* ── 지역 탭 ──────────────────────────────────── */
+#region-tabs { margin-bottom: 10px; }
+.region-tab { font-weight: 600; }
+.district-chips { max-height: 132px; overflow-y: auto; }
+
+/* ── 지역별 평균 ──────────────────────────────── */
+.stats-section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-card);
+}
+.stats-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.stats-table th {
+  background: #f2f2f7;
+  padding: 6px 10px;
+  text-align: left;
+  font-weight: 600;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--color-border);
+}
+.stats-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid #f0f0f0;
+  white-space: nowrap;
+}
+.stats-table tbody tr:last-child td { border-bottom: none; }
 
 /* ── 행 액션 버튼 ─────────────────────────────── */
 .row-actions { display: flex; gap: 4px; }
@@ -213,6 +249,11 @@ body {
   transition: border-color 0.15s, color 0.15s;
 }
 .action-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.action-btn:disabled:hover { border-color: var(--color-border); color: var(--color-text); }
 
 /* ── 모달 ─────────────────────────────────────── */
 .modal-overlay {

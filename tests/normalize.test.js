@@ -97,6 +97,72 @@ const mixed = [jeonseItem, { 아파트: '', 보증금액: '100', 전용면적: '
 const all = normalizeAll(mixed, '11680');
 assertEqual('유효한 2건만 반환', all.length, 2);
 
+// --- 주거 유형: apt 기본값 ---
+console.log('\n[propertyType]');
+assertEqual('기본 apt → 아파트', jeonse?.propertyType, '아파트');
+
+// --- 주거 유형: rh (연립다세대, 영문 필드) ---
+const rhItem = {
+  deposit: '20,000',
+  monthlyRent: '0',
+  excluUseAr: '45.5',
+  floor: '2',
+  buildYear: '1998',
+  dealYear: '2026',
+  dealMonth: '6',
+  dealDay: '10',
+  umdNm: '역삼동',
+  mhouseNm: '역삼빌라',
+};
+const rh = normalize(rhItem, '11680', 'rh');
+assert('rh 결과 존재', rh !== null);
+assertEqual('rh propertyType', rh?.propertyType, '연립다세대');
+assertEqual('rh 건물명(mhouseNm)', rh?.aptName, '역삼빌라');
+assertEqual('rh dong(umdNm 흡수)', rh?.dong, '역삼동');
+
+// --- 주거 유형: sh (단독다가구 — 건물명·층 없음, 계약면적) ---
+const shItem = {
+  deposit: '5,000',
+  monthlyRent: '50',
+  totalFloorAr: '80.5',
+  buildYear: '1995',
+  dealYear: '2026',
+  dealMonth: '6',
+  dealDay: '15',
+  umdNm: '성산동',
+};
+const sh = normalize(shItem, '11440', 'sh');
+assert('sh 결과 존재 (건물명 없어도 통과)', sh !== null);
+assertEqual('sh propertyType', sh?.propertyType, '단독다가구');
+assertEqual('sh 건물명 대체 표기', sh?.aptName, '단독/다가구');
+assertEqual('sh 면적(totalFloorAr)', sh?.area, 80.5);
+assertEqual('sh 층 0', sh?.floor, 0);
+
+// --- 주거 유형: offi (오피스텔) ---
+const offiItem = {
+  deposit: '1,000',
+  monthlyRent: '80',
+  excluUseAr: '28.1',
+  floor: '11',
+  buildYear: '2018',
+  dealYear: '2026',
+  dealMonth: '6',
+  dealDay: '20',
+  umdNm: '가산동',
+  offiNm: '가산센트럴오피스텔',
+};
+const offi = normalize(offiItem, '11545', 'offi');
+assert('offi 결과 존재', offi !== null);
+assertEqual('offi propertyType', offi?.propertyType, '오피스텔');
+assertEqual('offi 건물명(offiNm)', offi?.aptName, '가산센트럴오피스텔');
+
+// --- 수도권 district 매핑 ---
+console.log('\n[수도권 district]');
+const gyeonggi = normalize({ ...jeonseItem }, '41135');
+assertEqual('경기 코드 → 성남시 분당구', gyeonggi?.district, '성남시 분당구');
+const incheon = normalize({ ...jeonseItem }, '28290');
+assertEqual('인천 코드 → 인천 검단구', incheon?.district, '인천 검단구');
+
 // --- 결과 ---
 console.log(`\n결과: ${passed}개 통과, ${failed}개 실패`);
 if (failed > 0) process.exit(1);

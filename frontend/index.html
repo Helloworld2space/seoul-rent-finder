@@ -16,10 +16,22 @@
     <main>
       <!-- 검색 패널 -->
       <section class="search-panel" aria-label="검색 조건">
-        <!-- 자치구 선택 -->
+        <!-- 지역·자치구 선택 -->
         <div class="field-group">
-          <label class="field-label">자치구 <span class="hint">(미선택 시 서울 전체)</span></label>
-          <div id="district-chips" class="chips" role="group" aria-label="자치구 선택"></div>
+          <label class="field-label">지역 <span class="hint">(구 미선택 시 현재 지역 전체)</span></label>
+          <div id="region-tabs" class="chips" role="tablist" aria-label="지역 선택"></div>
+          <div id="district-chips" class="chips district-chips" role="group" aria-label="자치구 선택"></div>
+        </div>
+
+        <!-- 주거 유형 -->
+        <div class="field-group">
+          <label class="field-label">주거 유형 <span class="hint">(다중 선택)</span></label>
+          <div id="type-chips" class="chips" role="group" aria-label="주거 유형 선택">
+            <button class="chip active" data-prop-type="apt">아파트</button>
+            <button class="chip" data-prop-type="rh">연립다세대</button>
+            <button class="chip" data-prop-type="sh">단독다가구</button>
+            <button class="chip" data-prop-type="offi">오피스텔</button>
+          </div>
         </div>
 
         <!-- 조회 기간 -->
@@ -86,15 +98,38 @@
         <div class="result-summary" id="result-summary"></div>
       </section>
 
+      <!-- 지역별 평균 (필터 반영) -->
+      <section id="stats-section" class="stats-section hidden" aria-label="지역별 평균">
+        <h2 class="stats-title">지역별 평균 <span class="hint">(현재 필터 기준, 실거래가)</span></h2>
+        <div class="table-wrapper">
+          <table class="stats-table">
+            <thead>
+              <tr>
+                <th rowspan="2">지역</th>
+                <th rowspan="2">거래</th>
+                <th colspan="2">전세</th>
+                <th colspan="3">월세</th>
+              </tr>
+              <tr>
+                <th>건수</th><th>평균 보증금</th>
+                <th>건수</th><th>평균 보증금</th><th>평균 월세</th>
+              </tr>
+            </thead>
+            <tbody id="stats-body"></tbody>
+          </table>
+        </div>
+      </section>
+
       <!-- 결과 테이블 -->
       <section id="results-section" class="results-section hidden">
         <div class="table-wrapper">
           <table id="results-table" class="results-table">
             <thead>
               <tr>
-                <th>자치구</th>
+                <th>지역</th>
                 <th>법정동</th>
-                <th>아파트</th>
+                <th>건물명</th>
+                <th>주거유형</th>
                 <th>유형</th>
                 <th>보증금</th>
                 <th>월세</th>
@@ -132,6 +167,7 @@
     </div>
   </div>
 
+  <script src="stats.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
