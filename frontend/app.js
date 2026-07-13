@@ -141,6 +141,14 @@ function buildActionsCell(d) {
   const td = document.createElement('td');
   td.className = 'row-actions';
 
+  const star = document.createElement('button');
+  const key = Auth.dealKey(d);
+  star.className = `action-btn star-btn${favoriteKeys.has(key) ? ' active' : ''}`;
+  star.textContent = '★';
+  star.title = '관심 거래로 저장';
+  star.addEventListener('click', () => toggleFavorite(d, star));
+  td.appendChild(star);
+
   const mapLink = document.createElement('a');
   mapLink.className = 'action-btn';
   mapLink.textContent = '지도';
@@ -148,6 +156,14 @@ function buildActionsCell(d) {
   mapLink.target = '_blank';
   mapLink.rel = 'noopener';
   mapLink.title = '네이버 지도에서 단지 사진·거리뷰 보기';
+
+  const landLink = document.createElement('a');
+  landLink.className = 'action-btn';
+  landLink.textContent = '매물찾기';
+  landLink.href = naverLandUrl(d);
+  landLink.target = '_blank';
+  landLink.rel = 'noopener';
+  landLink.title = '네이버 부동산에서 이 단지·동네 매물 검색';
 
   const brokerBtn = document.createElement('button');
   brokerBtn.className = 'action-btn';
@@ -169,7 +185,7 @@ function buildActionsCell(d) {
   twinLink.rel = 'noopener';
   twinLink.title = 'ROOM TWIN 3D에서 이 평수로 인테리어 해보기';
 
-  td.append(mapLink, brokerBtn, twinLink);
+  td.append(mapLink, landLink, brokerBtn, twinLink);
   return td;
 }
 
@@ -178,6 +194,18 @@ const TWINFORGE_URL = 'https://twinforge.vercel.app'; // ROOM TWIN 3D (로컬 �
 
 function naverMapUrl(d) {
   return `https://map.naver.com/p/search/${encodeURIComponent(`${d.district} ${d.dong} ${d.aptName}`)}`;
+}
+
+/** 네이버 부동산 검색 딥링크(매물찾기) — 검색 페이지로 연결해 사용자가 매물을 찾는다.
+ *  네이버 부동산은 공식 공개 API가 없고, 주소→좌표 자동 연결(근처 매물 지도)은
+ *  지오코딩 키 없이는 불가능해 검색 진입점 방식이 합법적 최선.
+ *  m.land 검색만 서버측 200을 반환한다 (new.land/search는 404 리다이렉트).
+ *  단지명의 "(963)" 같은 지번 꼬리표는 검색 매칭을 방해해 제거하고,
+ *  단독다가구는 건물명이 없으므로 동네 단위로 검색한다. */
+function naverLandUrl(d) {
+  const cleanName = d.propertyType === '단독다가구' ? '' : d.aptName.replace(/\(.*?\)/g, '').trim();
+  const query = `${d.district} ${d.dong} ${cleanName}`.trim();
+  return `https://m.land.naver.com/search/result/${encodeURIComponent(query)}`;
 }
 
 function clamp(v, min, max) {
@@ -283,7 +311,10 @@ document.getElementById('broker-modal').addEventListener('click', (e) => {
   if (e.target === e.currentTarget) closeBrokerModal();
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeBrokerModal();
+  if (e.key === 'Escape') {
+    closeBrokerModal();
+    document.getElementById('fav-modal').classList.add('hidden');
+  }
 });
 
 function updateResultSummary(filtered, total) {
@@ -315,6 +346,7 @@ function refreshView() {
   document.getElementById('filter-panel').classList.remove('hidden');
   document.getElementById('stats-section').classList.remove('hidden');
   document.getElementById('results-section').classList.remove('hidden');
+  if (window._updateHScroll) window._updateHScroll();
 }
 
 /* ── 렌더: 지역별 평균 (stats.js의 순수함수 사용) ── */
@@ -417,6 +449,229 @@ document.getElementById('load-more-btn').addEventListener('click', () => {
   state.page++;
   showPage(_currentDeals, state.page, true);
 });
+
+/* ── 로그인 / 관심 거래 / 맞춤 검색 ───────────── */
+let favoriteKeys = new Set();   // 현재 사용자가 저장한 deal_key
+let favoritesCache = null;      // fetchFavorites 결과 (모달·맞춤 검색용)
+
+function updateAuthUI(user) {
+  const show = (id, on) => document.getElementById(id).classList.toggle('hidden', !on);
+  show('login-btn', !user);
+  show('logout-btn', !!user);
+  show('user-email', !!user);
+  show('fav-list-btn', !!user);
+  show('custom-search-btn', !!user);
+  if (user) document.getElementById('user-email').textContent = user.email;
+}
+
+async function loadFavorites() {
+  try {
+    favoritesCache = await Auth.fetchFavorites();
+    favoriteKeys = new Set(favoritesCache.map((r) => r.deal_key));
+  } catch (err) {
+    console.warn(err.message);
+    favoritesCache = [];
+    favoriteKeys = new Set();
+  }
+  updateCustomSearchBtn();
+  if (state.rawDeals.length > 0) refreshView(); // ★ 상태 반영해 재렌더
+}
+
+function updateCustomSearchBtn() {
+  const btn = document.getElementById('custom-search-btn');
+  const has = favoritesCache && favoritesCache.length > 0;
+  btn.disabled = !has;
+  btn.title = has ? '저장한 관심 거래 기반으로 조건을 자동 설정해 조회' : '관심 거래를 먼저 저장하세요';
+}
+
+async function toggleFavorite(deal, starEl) {
+  if (!Auth.getUser()) {
+    if (window.confirm('관심 거래 저장에는 구글 로그인이 필요합니다. 로그인할까요?')) {
+      Auth.signInWithGoogle();
+    }
+    return;
+  }
+  const key = Auth.dealKey(deal);
+  try {
+    if (favoriteKeys.has(key)) {
+      await Auth.removeFavorite(key);
+      favoriteKeys.delete(key);
+      favoritesCache = (favoritesCache ?? []).filter((r) => r.deal_key !== key);
+      starEl.classList.remove('active');
+    } else {
+      await Auth.addFavorite(deal);
+      favoriteKeys.add(key);
+      (favoritesCache ??= []).unshift({ deal_key: key, deal, created_at: new Date().toISOString() });
+      starEl.classList.add('active');
+    }
+    updateCustomSearchBtn();
+  } catch (err) {
+    setStatus(`오류: ${err.message}`, true);
+  }
+}
+
+/* 관심 목록 모달 */
+function openFavModal() {
+  const modal = document.getElementById('fav-modal');
+  const body = document.getElementById('fav-modal-body');
+  modal.classList.remove('hidden');
+  const rows = favoritesCache ?? [];
+  if (rows.length === 0) {
+    body.innerHTML = '<p class="modal-msg">저장된 관심 거래가 없습니다. 결과 목록의 ★를 눌러 저장하세요.</p>';
+    return;
+  }
+  body.innerHTML = '';
+  rows.forEach((r) => {
+    const d = r.deal;
+    const item = document.createElement('div');
+    item.className = 'broker-item';
+    item.innerHTML = `
+      <div class="broker-name">${esc(d.aptName)} <span class="badge badge-prop">${esc(d.propertyType ?? '아파트')}</span></div>
+      <div class="broker-addr">${esc(d.district)} ${esc(d.dong)} · ${esc(d.rentType)}
+        보증금 ${fmtAmount(d.deposit)}${d.monthlyRent > 0 ? ` / 월세 ${fmtAmount(d.monthlyRent)}` : ''}
+        · ${d.pyeong ?? ''}평 · ${esc(d.dealDate ?? '')}</div>`;
+    const actions = document.createElement('div');
+    actions.className = 'row-actions fav-actions';
+    const mk = (text, href, title) => {
+      const a = document.createElement('a');
+      a.className = 'action-btn'; a.textContent = text; a.href = href;
+      a.target = '_blank'; a.rel = 'noopener'; a.title = title;
+      return a;
+    };
+    actions.append(
+      mk('지도', naverMapUrl(d), '네이버 지도'),
+      mk('매물찾기', naverLandUrl(d), '네이버 부동산 검색'),
+      mk('인테리어', twinforgeUrl(d), 'ROOM TWIN 3D')
+    );
+    const del = document.createElement('button');
+    del.className = 'action-btn';
+    del.textContent = '삭제';
+    del.addEventListener('click', async () => {
+      try {
+        await Auth.removeFavorite(r.deal_key);
+        favoriteKeys.delete(r.deal_key);
+        favoritesCache = favoritesCache.filter((x) => x.deal_key !== r.deal_key);
+        updateCustomSearchBtn();
+        openFavModal(); // 목록 갱신
+        if (state.rawDeals.length > 0) refreshView();
+      } catch (err) {
+        setStatus(`오류: ${err.message}`, true);
+      }
+    });
+    actions.appendChild(del);
+    item.appendChild(actions);
+    body.appendChild(item);
+  });
+}
+
+/* 맞춤 검색: 저장된 거래에서 선호 추출 → 검색 조건 자동 세팅 → 조회 */
+const TYPE_LABEL_TO_CODE = { 아파트: 'apt', 연립다세대: 'rh', 단독다가구: 'sh', 오피스텔: 'offi' };
+
+function runCustomSearch() {
+  const prefs = computePreferences((favoritesCache ?? []).map((r) => r.deal));
+  if (!prefs) return;
+
+  // 지역 칩: 선호 지역 중 유효한 코드만 선택, 첫 지역의 탭으로 전환
+  const codes = prefs.districts.map((name) => districtCodeByName[name]).filter(Boolean);
+  if (codes.length > 0) {
+    selectedDistricts = new Set(codes);
+    activeRegion = districtRegionByName[prefs.districts[0]] ?? activeRegion;
+    document.querySelectorAll('#region-tabs .region-tab').forEach((b) =>
+      b.classList.toggle('active', b.dataset.region === activeRegion));
+    renderDistrictChips();
+  }
+
+  // 유형 칩
+  const typeCodes = prefs.propertyTypes.map((l) => TYPE_LABEL_TO_CODE[l]).filter(Boolean);
+  if (typeCodes.length > 0) {
+    selectedTypes = new Set(typeCodes);
+    document.querySelectorAll('[data-prop-type]').forEach((b) =>
+      b.classList.toggle('active', selectedTypes.has(b.dataset.propType)));
+  }
+
+  // 전/월세 성향 + 보증금·면적 범위 (프론트 필터)
+  state.filter.rentType = prefs.rentType;
+  document.querySelectorAll('[data-rent-type]').forEach((b) =>
+    b.classList.toggle('active', b.dataset.rentType === prefs.rentType));
+  state.filter.depositMin = prefs.depositMin;
+  state.filter.depositMax = prefs.depositMax;
+  state.filter.areaMin = prefs.areaMin;
+  state.filter.areaMax = prefs.areaMax;
+  document.getElementById('deposit-min').value = prefs.depositMin;
+  document.getElementById('deposit-max').value = prefs.depositMax;
+  document.getElementById('area-min').value = prefs.areaMin;
+  document.getElementById('area-max').value = prefs.areaMax;
+
+  document.getElementById('search-btn').click();
+}
+
+/* 이벤트 바인딩 + 세션 초기화 */
+document.getElementById('login-btn').addEventListener('click', () => Auth.signInWithGoogle());
+document.getElementById('logout-btn').addEventListener('click', () => Auth.signOut());
+document.getElementById('fav-list-btn').addEventListener('click', openFavModal);
+document.getElementById('custom-search-btn').addEventListener('click', runCustomSearch);
+document.getElementById('fav-modal-close').addEventListener('click', () =>
+  document.getElementById('fav-modal').classList.add('hidden'));
+document.getElementById('fav-modal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
+});
+
+Auth.onAuth((user) => {
+  updateAuthUI(user);
+  if (user) {
+    loadFavorites();
+  } else {
+    favoriteKeys = new Set();
+    favoritesCache = null;
+    if (state.rawDeals.length > 0) refreshView();
+  }
+});
+Auth.initAuth();
+
+/* ── 플로팅 가로 스크롤바 ─────────────────────── */
+// 결과 테이블이 길어 자체 가로 스크롤바가 테이블 맨 아래에만 보이는 문제 보완:
+// 테이블 하단이 화면 밖에 있는 동안 화면 하단에 고정 스크롤바를 띄워 어디서든 좌우 이동.
+(function setupFloatingHScroll() {
+  const wrapper = document.querySelector('#results-section .table-wrapper');
+  const bar = document.getElementById('hscroll');
+  const inner = document.getElementById('hscroll-inner');
+  let syncing = false;
+
+  function update() {
+    const section = document.getElementById('results-section');
+    const rect = wrapper.getBoundingClientRect();
+    const overflows = wrapper.scrollWidth > wrapper.clientWidth + 1;
+    // 테이블 상단이 화면 안에 들어왔고, 하단(자체 스크롤바)은 아직 화면 밖일 때만 표시
+    const inView = rect.top < window.innerHeight - 40 && rect.bottom > window.innerHeight;
+    if (!section.classList.contains('hidden') && overflows && inView) {
+      bar.style.left = `${rect.left}px`;
+      bar.style.width = `${rect.width}px`;
+      inner.style.width = `${wrapper.scrollWidth}px`;
+      bar.classList.remove('hidden');
+      if (!syncing) bar.scrollLeft = wrapper.scrollLeft;
+    } else {
+      bar.classList.add('hidden');
+    }
+  }
+
+  bar.addEventListener('scroll', () => {
+    if (syncing) return;
+    syncing = true;
+    wrapper.scrollLeft = bar.scrollLeft;
+    syncing = false;
+  });
+  wrapper.addEventListener('scroll', () => {
+    if (syncing) return;
+    syncing = true;
+    bar.scrollLeft = wrapper.scrollLeft;
+    syncing = false;
+  });
+  window.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('resize', update);
+  new ResizeObserver(update).observe(wrapper);
+  // refreshView/더보기 이후에도 갱신되도록 노출
+  window._updateHScroll = update;
+})();
 
 /* ── 상태 메시지 ──────────────────────────────── */
 function setStatus(msg, isError = false) {

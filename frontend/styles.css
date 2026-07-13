@@ -37,6 +37,9 @@ body {
 .site-header { margin-bottom: 24px; }
 .site-header h1 { font-size: 22px; font-weight: 700; }
 .site-header .subtitle { color: var(--color-text-muted); font-size: 13px; margin-top: 4px; }
+.header-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.auth-area { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.user-email { font-size: 12px; color: var(--color-text-muted); }
 
 /* ── 검색 패널 ────────────────────────────────── */
 .search-panel {
@@ -254,6 +257,10 @@ body {
   cursor: not-allowed;
 }
 .action-btn:disabled:hover { border-color: var(--color-border); color: var(--color-text); }
+.star-btn { color: #b0b0b6; }
+.star-btn.active { color: #ff9500; border-color: #ff9500; }
+.fav-actions { margin-top: 6px; }
+.btn-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ── 모달 ─────────────────────────────────────── */
 .modal-overlay {
@@ -312,6 +319,18 @@ body {
 .broker-phone { font-size: 13px; color: var(--color-primary); text-decoration: none; }
 .broker-phone:hover { text-decoration: underline; }
 .broker-phone.muted { color: var(--color-text-muted); }
+
+/* ── 플로팅 가로 스크롤바 ─────────────────────── */
+.hscroll {
+  position: fixed;
+  bottom: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: rgba(245, 245, 247, 0.9);
+  border-top: 1px solid var(--color-border);
+  z-index: 60;
+}
+.hscroll > div { height: 1px; }
 
 /* ── 상태 메시지 ──────────────────────────────── */
 .status-msg {

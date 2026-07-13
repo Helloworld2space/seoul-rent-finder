@@ -9,8 +9,20 @@
 <body>
   <div id="app">
     <header class="site-header">
-      <h1>서울 전월세 실거래가 탐색기</h1>
-      <p class="subtitle">국토교통부 공식 실거래가 데이터 기반</p>
+      <div class="header-row">
+        <div>
+          <h1>서울 전월세 실거래가 탐색기</h1>
+          <p class="subtitle">국토교통부 공식 실거래가 데이터 기반</p>
+        </div>
+        <div id="auth-area" class="auth-area">
+          <button id="custom-search-btn" class="btn-secondary hidden" disabled
+                  title="관심 거래를 먼저 저장하세요">맞춤 검색</button>
+          <button id="fav-list-btn" class="btn-secondary hidden">★ 관심 목록</button>
+          <span id="user-email" class="user-email hidden"></span>
+          <button id="login-btn" class="btn-secondary hidden">G 구글 로그인</button>
+          <button id="logout-btn" class="btn-secondary hidden">로그아웃</button>
+        </div>
+      </div>
     </header>
 
     <main>
@@ -155,6 +167,23 @@
     </main>
   </div>
 
+  <!-- 결과 테이블용 플로팅 가로 스크롤바 (테이블 하단이 화면 밖일 때 표시) -->
+  <div id="hscroll" class="hscroll hidden" aria-hidden="true">
+    <div id="hscroll-inner"></div>
+  </div>
+
+  <!-- 관심 목록 모달 -->
+  <div id="fav-modal" class="modal-overlay hidden">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="fav-modal-title">
+      <div class="modal-header">
+        <h2 id="fav-modal-title">★ 관심 거래 목록</h2>
+        <button id="fav-modal-close" class="modal-close" aria-label="닫기">&times;</button>
+      </div>
+      <div id="fav-modal-body" class="modal-body"></div>
+      <div class="modal-footer">저장한 실거래 스냅샷입니다. 맞춤 검색의 기준이 됩니다.</div>
+    </div>
+  </div>
+
   <!-- 중개업소 모달 -->
   <div id="broker-modal" class="modal-overlay hidden">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="broker-modal-title">
@@ -167,6 +196,9 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="auth.js"></script>
+  <script src="prefs.js"></script>
   <script src="stats.js"></script>
   <script src="app.js"></script>
 </body>

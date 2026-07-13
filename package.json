@@ -5,7 +5,7 @@
   "main": "backend/server.js",
   "scripts": {
     "start": "node backend/server.js",
-    "test": "node tests/normalize.test.js && node tests/broker-normalize.test.js && node tests/stats.test.js"
+    "test": "node tests/normalize.test.js && node tests/broker-normalize.test.js && node tests/stats.test.js && node tests/prefs.test.js"
   },
   "dependencies": {
     "dotenv": "^16.0.0",
