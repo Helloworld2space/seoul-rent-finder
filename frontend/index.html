@@ -15,6 +15,7 @@
           <p class="subtitle">국토교통부 공식 실거래가 데이터 기반</p>
         </div>
         <div id="auth-area" class="auth-area">
+          <a href="help.html" class="btn-secondary help-link">이용 가이드</a>
           <button id="custom-search-btn" class="btn-secondary hidden" disabled
                   title="관심 거래를 먼저 저장하세요">맞춤 검색</button>
           <button id="fav-list-btn" class="btn-secondary hidden">★ 관심 목록</button>
@@ -90,6 +91,16 @@
               <input type="number" id="area-min" class="input-num" placeholder="최소" min="0" />
               <span>~</span>
               <input type="number" id="area-max" class="input-num" placeholder="최대" min="0" />
+            </div>
+          </div>
+
+          <!-- 평수 범위 -->
+          <div class="field-group inline">
+            <label class="field-label">평수</label>
+            <div class="range-inputs">
+              <input type="number" id="pyeong-min" class="input-num small-num" placeholder="최소" min="0" step="0.5" />
+              <span>~</span>
+              <input type="number" id="pyeong-max" class="input-num small-num" placeholder="최대" min="0" step="0.5" />
             </div>
           </div>
 

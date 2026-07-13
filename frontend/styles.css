@@ -100,6 +100,7 @@ body {
 .select:focus, .input-num:focus { border-color: var(--color-primary); }
 .select.small { padding: 5px 8px; font-size: 12px; }
 .input-num { width: 120px; }
+.input-num.small-num { width: 90px; }
 .range-inputs { display: flex; align-items: center; gap: 6px; }
 
 /* ── 버튼 ─────────────────────────────────────── */
@@ -340,6 +341,12 @@ body {
   font-size: 15px;
 }
 .status-msg.error { color: var(--color-danger); }
+
+/* ── 이용 가이드 ──────────────────────────────── */
+.help-section { margin-bottom: 16px; }
+.help-title { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+.help-list { padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.help-link, .auth-area a.btn-secondary { text-decoration: none; display: inline-block; }
 
 /* ── 유틸 ─────────────────────────────────────── */
 .hidden { display: none !important; }

@@ -7,6 +7,8 @@ const state = {
     depositMax: null,
     areaMin: null,
     areaMax: null,
+    pyeongMin: null,
+    pyeongMax: null,
   },
   sort: 'dealDate-desc',
   page: 0,           // 렌더링된 페이지 수
@@ -50,6 +52,12 @@ function filterSort(deals, filter, sort) {
   }
   if (filter.areaMax != null) {
     list = list.filter((d) => d.area <= filter.areaMax);
+  }
+  if (filter.pyeongMin != null) {
+    list = list.filter((d) => d.pyeong >= filter.pyeongMin);
+  }
+  if (filter.pyeongMax != null) {
+    list = list.filter((d) => d.pyeong <= filter.pyeongMax);
   }
 
   const [key, dir] = sort.split('-');
@@ -428,8 +436,8 @@ document.querySelectorAll('[data-rent-type]').forEach((btn) => {
 // 보증금 / 면적 필터
 function bindNumFilter(inputId, stateKey) {
   document.getElementById(inputId).addEventListener('change', (e) => {
-    const val = e.target.value === '' ? null : parseInt(e.target.value, 10);
-    state.filter[stateKey] = isNaN(val) ? null : val;
+    const val = e.target.value === '' ? null : parseFloat(e.target.value);
+    state.filter[stateKey] = val === null || isNaN(val) ? null : val;
     if (state.rawDeals.length > 0) refreshView();
   });
 }
@@ -437,6 +445,8 @@ bindNumFilter('deposit-min', 'depositMin');
 bindNumFilter('deposit-max', 'depositMax');
 bindNumFilter('area-min', 'areaMin');
 bindNumFilter('area-max', 'areaMax');
+bindNumFilter('pyeong-min', 'pyeongMin');
+bindNumFilter('pyeong-max', 'pyeongMax');
 
 // 정렬
 document.getElementById('sort-select').addEventListener('change', (e) => {
