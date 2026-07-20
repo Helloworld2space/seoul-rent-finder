@@ -193,6 +193,10 @@ function buildActionsCell(d) {
   twinLink.rel = 'noopener';
   twinLink.title = 'ROOM TWIN 3D에서 이 평수로 인테리어 해보기';
 
+  mapLink.addEventListener('click', () => Analytics.track('action_click', { action: 'map' }));
+  landLink.addEventListener('click', () => Analytics.track('action_click', { action: 'naver_land' }));
+  twinLink.addEventListener('click', () => Analytics.track('action_click', { action: 'twinforge' }));
+
   td.append(mapLink, landLink, brokerBtn, twinLink);
   return td;
 }
@@ -257,6 +261,7 @@ async function openBrokerModal(deal) {
   title.textContent = `${deal.district} ${deal.dong} 중개업소`;
   body.innerHTML = '<p class="modal-msg">불러오는 중…</p>';
   modal.classList.remove('hidden');
+  Analytics.track('action_click', { action: 'broker' });
 
   const code = districtCodeByName[deal.district];
   if (!code) {
@@ -392,6 +397,14 @@ document.getElementById('search-btn').addEventListener('click', async () => {
   document.getElementById('stats-section').classList.add('hidden');
   document.getElementById('results-section').classList.add('hidden');
 
+  Analytics.track('search', {
+    region: activeRegion,
+    district_count: codes.length,
+    explicit_selection: selectedDistricts.size > 0,
+    types: types.join(','),
+    months,
+  });
+
   try {
     const data = await fetchDeals(codes, months, types);
     state.rawDeals = data.results;
@@ -460,6 +473,23 @@ document.getElementById('load-more-btn').addEventListener('click', () => {
   showPage(_currentDeals, state.page, true);
 });
 
+/* ── 랜딩 (첫 방문에만 표시) ──────────────────── */
+(function setupLanding() {
+  const landing = document.getElementById('landing');
+  const main = document.querySelector('main');
+  const seen = localStorage.getItem('rentli_landing_seen');
+  if (!seen) {
+    landing.classList.remove('hidden');
+    main.classList.add('hidden');
+  }
+  document.getElementById('landing-start').addEventListener('click', () => {
+    localStorage.setItem('rentli_landing_seen', '1');
+    landing.classList.add('hidden');
+    main.classList.remove('hidden');
+    Analytics.track('landing_start');
+  });
+})();
+
 /* ── 로그인 / 관심 거래 / 맞춤 검색 ───────────── */
 let favoriteKeys = new Set();   // 현재 사용자가 저장한 deal_key
 let favoritesCache = null;      // fetchFavorites 결과 (모달·맞춤 검색용)
@@ -513,6 +543,7 @@ async function toggleFavorite(deal, starEl) {
       favoriteKeys.add(key);
       (favoritesCache ??= []).unshift({ deal_key: key, deal, created_at: new Date().toISOString() });
       starEl.classList.add('active');
+      Analytics.track('favorite_added', { district: deal.district, property_type: deal.propertyType, rent_type: deal.rentType });
     }
     updateCustomSearchBtn();
   } catch (err) {
@@ -616,10 +647,16 @@ function runCustomSearch() {
 }
 
 /* 이벤트 바인딩 + 세션 초기화 */
-document.getElementById('login-btn').addEventListener('click', () => Auth.signInWithGoogle());
+document.getElementById('login-btn').addEventListener('click', () => {
+  Analytics.track('login_click');
+  Auth.signInWithGoogle();
+});
 document.getElementById('logout-btn').addEventListener('click', () => Auth.signOut());
 document.getElementById('fav-list-btn').addEventListener('click', openFavModal);
-document.getElementById('custom-search-btn').addEventListener('click', runCustomSearch);
+document.getElementById('custom-search-btn').addEventListener('click', () => {
+  Analytics.track('custom_search');
+  runCustomSearch();
+});
 document.getElementById('fav-modal-close').addEventListener('click', () =>
   document.getElementById('fav-modal').classList.add('hidden'));
 document.getElementById('fav-modal').addEventListener('click', (e) => {

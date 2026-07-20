@@ -3,16 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>서울 전월세 실거래가 탐색기</title>
+  <title>Rent.li — 수도권 전월세 실거래가 탐색</title>
   <link rel="stylesheet" href="styles.css" />
+  <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
   <div id="app">
     <header class="site-header">
       <div class="header-row">
         <div>
-          <h1>서울 전월세 실거래가 탐색기</h1>
-          <p class="subtitle">국토교통부 공식 실거래가 데이터 기반</p>
+          <h1>Rent.li</h1>
+          <p class="subtitle">수도권 전월세 실거래가 탐색 · 국토교통부 공식 데이터</p>
         </div>
         <div id="auth-area" class="auth-area">
           <a href="help.html" class="btn-secondary help-link">이용 가이드</a>
@@ -25,6 +26,23 @@
         </div>
       </div>
     </header>
+
+    <!-- 랜딩 (첫 방문 시에만 표시, 시작하기 후 localStorage로 생략) -->
+    <section id="landing" class="landing hidden" aria-label="서비스 소개">
+      <div class="landing-hero">
+        <h2 class="landing-title">Rent.li</h2>
+        <p class="landing-tagline">수도권 전월세, 실거래가로 똑똑하게 찾기</p>
+        <p class="landing-desc">국토교통부에 신고된 진짜 계약 기록으로 시세를 확인하고,<br />관심 거래를 저장해 나에게 맞는 조건을 찾아보세요.</p>
+      </div>
+      <div class="landing-features">
+        <div class="landing-card"><span class="landing-emoji">🔍</span><strong>실거래 검색</strong><p>서울·경기·인천 83개 지역, 아파트·빌라·단독·오피스텔 4개 유형</p></div>
+        <div class="landing-card"><span class="landing-emoji">📊</span><strong>지역별 평균</strong><p>구별 전세·월세 평균 보증금과 월세를 한눈에 비교</p></div>
+        <div class="landing-card"><span class="landing-emoji">★</span><strong>관심 거래 · 맞춤 검색</strong><p>구글 로그인으로 저장하고, 내 취향 기반 자동 검색</p></div>
+        <div class="landing-card"><span class="landing-emoji">🛋</span><strong>3D 인테리어</strong><p>마음에 든 집의 평수 그대로 ROOM TWIN 3D에서 가구 배치</p></div>
+      </div>
+      <button id="landing-start" class="btn-primary landing-start">시작하기 →</button>
+      <p class="landing-foot">데이터 출처: 국토교통부·서울 열린데이터광장 공식 공개 API</p>
+    </section>
 
     <main>
       <!-- 검색 패널 -->
@@ -208,6 +226,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="analytics.js"></script>
   <script src="auth.js"></script>
   <script src="prefs.js"></script>
   <script src="stats.js"></script>

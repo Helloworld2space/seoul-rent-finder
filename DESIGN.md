@@ -1,4 +1,4 @@
-# 서울 전월세 실거래가 탐색기 — 설계 문서
+# Rent.li (수도권 전월세 실거래가 탐색기) — 설계 문서
 
 조건 입력 → 목록 출력 웹앱. 국토교통부 아파트 전월세 실거래가(공공데이터포털)를
 합법적으로 활용해, 서울 25개 자치구의 실거래 기록을 조건에 맞춰 탐색한다.
@@ -185,7 +185,14 @@ frontend/
   보증금·면적 min~max ±15%)를 추출해 검색 조건을 자동 세팅 — `frontend/prefs.js`
   순수함수(테스트: `tests/prefs.test.js`). 새 API 없음, 기존 수집/필터 경계 그대로.
 
-## 9. 합법성 메모
+## 9. 랜딩 · 이용 데이터
+
+- 첫 방문 시 index.html의 랜딩 섹션 표시, "시작하기" 후 localStorage(`rentli_landing_seen`)로 생략.
+- 이용 데이터: Vercel Analytics(트래픽, 대시보드에서 Enable 필요) + PostHog(행동 이벤트,
+  `frontend/analytics.js`의 `POSTHOG_KEY`가 비어 있으면 전체 no-op).
+  수집 이벤트: landing_start, search, favorite_added, action_click, custom_search, login_click.
+
+## 10. 합법성 메모
 
 - 데이터 출처: 국토교통부 아파트 전월세 실거래가 (공공데이터포털 공식 API).
 - "현재 매물"이 아니라 "계약 완료·신고된 거래" 기록. 시세 파악·후보 좁히기 용도.

@@ -342,6 +342,38 @@ body {
 }
 .status-msg.error { color: var(--color-danger); }
 
+/* ── 랜딩 ─────────────────────────────────────── */
+.landing {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 48px 24px;
+  box-shadow: var(--shadow-card);
+  text-align: center;
+}
+.landing-title { font-size: 40px; font-weight: 800; letter-spacing: -0.02em; }
+.landing-tagline { font-size: 17px; margin-top: 8px; color: var(--color-text); }
+.landing-desc { font-size: 13px; color: var(--color-text-muted); margin-top: 10px; line-height: 1.7; }
+.landing-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  max-width: 900px;
+  margin: 28px auto 0;
+  text-align: left;
+}
+.landing-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  background: var(--color-bg);
+}
+.landing-emoji { font-size: 20px; display: block; margin-bottom: 6px; }
+.landing-card strong { font-size: 13px; }
+.landing-card p { font-size: 12px; color: var(--color-text-muted); margin-top: 4px; }
+.landing-start { margin-top: 28px; font-size: 15px; padding: 11px 36px; }
+.landing-foot { margin-top: 20px; font-size: 11px; color: var(--color-text-muted); }
+
 /* ── 이용 가이드 ──────────────────────────────── */
 .help-section { margin-bottom: 16px; }
 .help-title { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
