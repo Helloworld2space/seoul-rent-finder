@@ -198,8 +198,12 @@ frontend/
   선택은 PostHog opt-in/out으로 반영. 동의 선택은 sessionStorage에 보관했다가 OAuth 복귀 후
   `user_consents`에 버전과 함께 기록(입증용). 기존 가입자는 로그인 시 재동의 요구, 거부하면 로그아웃.
 - 약관 `terms.html`(중개업 아님·면책), 처리방침 `privacy.html`(국외이전 표·보호책임자) — 푸터 상시 노출.
-- 회원 탈퇴: `delete_user()` security definer RPC(supabase/consents.sql)로 본인 계정 삭제 —
-  favorites·user_consents는 FK cascade로 함께 파기. 버전 갱신 시 auth.js의 CONSENT_VERSION과
+- **회원 탈퇴**: `auth.users`는 postgres 롤에도 DELETE 권한이 없어(Supabase 보안 정책)
+  SQL RPC로는 지울 수 없다 — service_role 키가 필요한 Admin API를
+  `supabase/functions/delete-account`(Edge Function)에서만 호출. 요청자 신원은
+  anon 클라이언트 + 사용자 토큰으로 먼저 검증한 뒤, admin 클라이언트로 삭제한다.
+  favorites·user_consents는 FK cascade로 함께 파기. `supabase/consents.sql`의
+  옛 RPC는 사용하지 않음(문서만 남김). 버전 갱신 시 auth.js의 CONSENT_VERSION과
   두 HTML의 시행일을 함께 올릴 것.
 
 ## 11. 합법성 메모

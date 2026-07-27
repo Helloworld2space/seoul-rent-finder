@@ -14,15 +14,8 @@ create policy "own rows" on user_consents for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
 grant select, insert on public.user_consents to authenticated;
 
--- 2) 회원 탈퇴: 로그인한 본인 계정을 삭제한다.
---    favorites·user_consents는 FK on delete cascade로 함께 파기된다.
-create or replace function delete_user()
-returns void
-language sql
-security definer
-set search_path = ''
-as $$
-  delete from auth.users where id = auth.uid();
-$$;
-revoke execute on function delete_user() from public, anon;
-grant execute on function delete_user() to authenticated;
+-- 2) [사용 안 함] 아래 RPC로는 회원 탈퇴가 동작하지 않는다 —
+--    postgres 롤에도 auth.users DELETE 권한이 없어(Supabase 보안 정책) 항상 실패한다.
+--    실제 탈퇴는 supabase/functions/delete-account (Edge Function, service_role 사용)가 처리한다.
+--    이미 이 함수를 만들어뒀다면 정리용으로 아래 한 줄만 실행해도 된다 (없어도 무해함):
+-- drop function if exists delete_user();

@@ -108,9 +108,17 @@ async function recordConsents(entries) {
   if (error) throw new Error('동의 기록 실패: ' + error.message);
 }
 
-/** 회원 탈퇴 — 계정과 관심 거래·동의 이력을 즉시 파기 (supabase/consents.sql의 RPC) */
+/**
+ * 회원 탈퇴 — 계정과 관심 거래·동의 이력을 즉시 파기.
+ * auth.users는 postgres 롤에도 DELETE 권한이 없어(Supabase 보안 정책) RPC로 직접
+ * 지울 수 없다 — service_role 키가 필요한 Admin API를 Edge Function 안에서만 호출한다.
+ * (supabase/functions/delete-account/index.ts)
+ */
 async function deleteAccount() {
-  const { error } = await sb.rpc('delete_user');
+  const { data: { session } } = await sb.auth.getSession();
+  const { error } = await sb.functions.invoke('delete-account', {
+    headers: { Authorization: `Bearer ${session.access_token}` },
+  });
   if (error) throw new Error('탈퇴 처리 실패: ' + error.message);
   await sb.auth.signOut();
 }
