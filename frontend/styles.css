@@ -380,5 +380,48 @@ body {
 .help-list { padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
 .help-link, .auth-area a.btn-secondary { text-decoration: none; display: inline-block; }
 
+/* ── 푸터 ─────────────────────────────────────── */
+.site-footer {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+  font-size: 12px;
+  color: var(--color-text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+}
+.site-footer a { color: var(--color-text-muted); }
+.footer-note { margin-left: auto; font-size: 11px; }
+
+/* ── 동의 모달 / 탈퇴 ─────────────────────────── */
+.consent-body { padding-top: 12px; }
+.consent-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 7px 0;
+  font-size: 13px;
+  cursor: pointer;
+}
+.consent-item input { margin-top: 3px; flex-shrink: 0; }
+.consent-item a { color: var(--color-primary); }
+.consent-detail { display: block; font-size: 11px; color: var(--color-text-muted); margin-top: 2px; }
+.consent-all { font-size: 14px; }
+.consent-divider { border: none; border-top: 1px solid var(--color-border); margin: 6px 0; }
+.consent-footer { display: flex; justify-content: flex-end; }
+.consent-footer .btn-primary { margin-top: 0; }
+.link-danger {
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+.link-danger:hover { color: var(--color-danger); }
+
 /* ── 유틸 ─────────────────────────────────────── */
 .hidden { display: none !important; }

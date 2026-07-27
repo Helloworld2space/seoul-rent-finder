@@ -504,10 +504,118 @@ function updateAuthUI(user) {
   const show = (id, on) => document.getElementById(id).classList.toggle('hidden', !on);
   show('login-btn', !user);
   show('logout-btn', !!user);
+  show('delete-account-btn', !!user);
   show('user-email', !!user);
   show('fav-list-btn', !!user);
   show('custom-search-btn', !!user);
   if (user) document.getElementById('user-email').textContent = user.email;
+}
+
+/* ── 로그인 동의 모달 ─────────────────────────── */
+// pre-login: 동의 후 구글 로그인으로 진행 (동의 선택은 sessionStorage에 보관했다가
+//            OAuth 복귀 후 user_consents에 기록)
+// re-consent: 이미 로그인된 기존 사용자 중 현재 버전 동의 기록이 없는 경우 —
+//             동의하면 바로 기록, 거부(닫기)하면 로그아웃
+let consentMode = 'pre-login';
+const PENDING_CONSENT_KEY = 'rentli_pending_consent';
+
+function consentEls() {
+  return {
+    modal: document.getElementById('consent-modal'),
+    all: document.getElementById('consent-all'),
+    required: [...document.querySelectorAll('.consent-req')],
+    analytics: document.getElementById('consent-analytics'),
+    continueBtn: document.getElementById('consent-continue'),
+  };
+}
+
+function openConsentModal(mode) {
+  consentMode = mode;
+  const { modal, all, required, analytics, continueBtn } = consentEls();
+  all.checked = false;
+  required.forEach((c) => (c.checked = false));
+  analytics.checked = false;
+  continueBtn.disabled = true;
+  continueBtn.textContent = mode === 'pre-login' ? '동의하고 구글 로그인' : '동의하고 계속';
+  modal.classList.remove('hidden');
+}
+
+function readConsentChoices() {
+  const { required, analytics } = consentEls();
+  const entries = {};
+  required.forEach((c) => (entries[c.dataset.consent] = c.checked));
+  entries.analytics = analytics.checked;
+  return entries;
+}
+
+function applyAnalyticsChoice(agreed) {
+  // PostHog는 opt-out 상태를 자체 저장소에 영속화한다
+  try {
+    if (window.posthog) agreed ? window.posthog.opt_in_capturing() : window.posthog.opt_out_capturing();
+  } catch { /* 무시 */ }
+}
+
+(function setupConsentModal() {
+  const { modal, all, required, analytics, continueBtn } = consentEls();
+
+  function sync() {
+    continueBtn.disabled = !required.every((c) => c.checked);
+    all.checked = required.every((c) => c.checked) && analytics.checked;
+  }
+  all.addEventListener('change', () => {
+    required.forEach((c) => (c.checked = all.checked));
+    analytics.checked = all.checked;
+    sync();
+  });
+  [...required, analytics].forEach((c) => c.addEventListener('change', sync));
+
+  continueBtn.addEventListener('click', async () => {
+    const choices = readConsentChoices();
+    applyAnalyticsChoice(choices.analytics);
+    modal.classList.add('hidden');
+    if (consentMode === 'pre-login') {
+      sessionStorage.setItem(PENDING_CONSENT_KEY, JSON.stringify(choices));
+      Auth.signInWithGoogle();
+    } else {
+      try {
+        await Auth.recordConsents(choices);
+      } catch (err) {
+        console.warn(err.message);
+      }
+    }
+  });
+
+  function dismiss() {
+    modal.classList.add('hidden');
+    if (consentMode === 're-consent') {
+      // 필수 동의 없이는 회원 데이터를 처리할 수 없다 → 로그아웃
+      Auth.signOut();
+      setStatus('필수 동의를 거부하여 로그아웃되었습니다. 로그인하려면 동의가 필요합니다.');
+    }
+  }
+  document.getElementById('consent-modal-close').addEventListener('click', dismiss);
+  modal.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) dismiss();
+  });
+})();
+
+/** OAuth 복귀 후 보관해 둔 동의 선택을 기록. 기록이 없으면 재동의 요구. */
+async function ensureConsentRecorded() {
+  const pendingRaw = sessionStorage.getItem(PENDING_CONSENT_KEY);
+  if (pendingRaw) {
+    sessionStorage.removeItem(PENDING_CONSENT_KEY);
+    try {
+      await Auth.recordConsents(JSON.parse(pendingRaw));
+      return;
+    } catch (err) {
+      console.warn(err.message); // 기록 실패 시 아래 재동의 경로로
+    }
+  }
+  try {
+    if (!(await Auth.hasCurrentConsent())) openConsentModal('re-consent');
+  } catch (err) {
+    console.warn(err.message); // 테이블 미생성 등 — 기능을 막지는 않음
+  }
 }
 
 async function loadFavorites() {
@@ -655,9 +763,21 @@ function runCustomSearch() {
 /* 이벤트 바인딩 + 세션 초기화 */
 document.getElementById('login-btn').addEventListener('click', () => {
   Analytics.track('login_click');
-  Auth.signInWithGoogle();
+  openConsentModal('pre-login'); // 동의 후 구글 로그인으로 진행
 });
 document.getElementById('logout-btn').addEventListener('click', () => Auth.signOut());
+document.getElementById('delete-account-btn').addEventListener('click', async () => {
+  if (!Auth.getUser()) return;
+  if (!window.confirm('회원 탈퇴 시 저장한 관심 거래와 동의 이력이 모두 삭제되며 복구할 수 없습니다.\n탈퇴하시겠습니까?')) return;
+  if (!window.confirm('정말 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
+  try {
+    await Auth.deleteAccount();
+    Analytics.track('account_deleted');
+    setStatus('탈퇴가 완료되었습니다. 이용해 주셔서 감사합니다.');
+  } catch (err) {
+    setStatus(`오류: ${err.message}`, true);
+  }
+});
 document.getElementById('fav-list-btn').addEventListener('click', openFavModal);
 document.getElementById('custom-search-btn').addEventListener('click', () => {
   Analytics.track('custom_search');
@@ -673,6 +793,7 @@ Auth.onAuth((user) => {
   updateAuthUI(user);
   if (user) {
     loadFavorites();
+    ensureConsentRecorded();
   } else {
     favoriteKeys = new Set();
     favoritesCache = null;

@@ -81,7 +81,42 @@ async function removeFavorite(key) {
   if (error) throw new Error('삭제 실패: ' + error.message);
 }
 
+/* ── 동의 기록 / 회원 탈퇴 ────────────────────── */
+const CONSENT_VERSION = '2026-07-11'; // terms/privacy.html 버전과 일치시킬 것
+
+/** 현재 버전의 필수 동의 기록이 있는지 */
+async function hasCurrentConsent() {
+  const { data, error } = await sb
+    .from('user_consents')
+    .select('consent_key')
+    .eq('version', CONSENT_VERSION)
+    .eq('agreed', true);
+  if (error) throw new Error('동의 이력 조회 실패: ' + error.message);
+  const keys = new Set((data ?? []).map((r) => r.consent_key));
+  return ['age14', 'terms', 'privacy', 'cross_border'].every((k) => keys.has(k));
+}
+
+/** 동의 항목 일괄 기록. entries: { age14: true, terms: true, ..., analytics: false } */
+async function recordConsents(entries) {
+  const rows = Object.entries(entries).map(([consent_key, agreed]) => ({
+    user_id: currentUser.id,
+    consent_key,
+    agreed,
+    version: CONSENT_VERSION,
+  }));
+  const { error } = await sb.from('user_consents').insert(rows);
+  if (error) throw new Error('동의 기록 실패: ' + error.message);
+}
+
+/** 회원 탈퇴 — 계정과 관심 거래·동의 이력을 즉시 파기 (supabase/consents.sql의 RPC) */
+async function deleteAccount() {
+  const { error } = await sb.rpc('delete_user');
+  if (error) throw new Error('탈퇴 처리 실패: ' + error.message);
+  await sb.auth.signOut();
+}
+
 window.Auth = {
   initAuth, onAuth, signInWithGoogle, signOut, getUser,
   dealKey, fetchFavorites, addFavorite, removeFavorite,
+  CONSENT_VERSION, hasCurrentConsent, recordConsents, deleteAccount,
 };

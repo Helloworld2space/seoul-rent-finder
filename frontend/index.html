@@ -23,6 +23,7 @@
           <span id="user-email" class="user-email hidden"></span>
           <button id="login-btn" class="btn-secondary hidden">G 구글 로그인</button>
           <button id="logout-btn" class="btn-secondary hidden">로그아웃</button>
+          <button id="delete-account-btn" class="link-danger hidden">회원 탈퇴</button>
         </div>
       </div>
     </header>
@@ -194,6 +195,53 @@
       <!-- 상태 메시지 -->
       <div id="status-msg" class="status-msg hidden" role="status"></div>
     </main>
+
+    <footer class="site-footer">
+      <a href="terms.html">이용약관</a> · <a href="privacy.html">개인정보 처리방침</a> · <a href="help.html">이용 가이드</a>
+      <span class="footer-note">Rent.li는 정보 제공 서비스이며 부동산 중개업이 아닙니다.</span>
+    </footer>
+  </div>
+
+  <!-- 로그인 동의 모달 -->
+  <div id="consent-modal" class="modal-overlay hidden">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="consent-modal-title">
+      <div class="modal-header">
+        <h2 id="consent-modal-title">서비스 이용 동의</h2>
+        <button id="consent-modal-close" class="modal-close" aria-label="닫기">&times;</button>
+      </div>
+      <div class="modal-body consent-body">
+        <label class="consent-item consent-all">
+          <input type="checkbox" id="consent-all" />
+          <span><strong>전체 동의</strong> (선택 항목 포함)</span>
+        </label>
+        <hr class="consent-divider" />
+        <label class="consent-item">
+          <input type="checkbox" class="consent-req" data-consent="age14" />
+          <span>[필수] 만 14세 이상입니다</span>
+        </label>
+        <label class="consent-item">
+          <input type="checkbox" class="consent-req" data-consent="terms" />
+          <span>[필수] <a href="terms.html" target="_blank" rel="noopener">이용약관</a>에 동의합니다</span>
+        </label>
+        <label class="consent-item">
+          <input type="checkbox" class="consent-req" data-consent="privacy" />
+          <span>[필수] <a href="privacy.html" target="_blank" rel="noopener">개인정보 수집·이용</a>에 동의합니다
+            <small class="consent-detail">이메일·이름·프로필(회원 식별), 관심 거래(맞춤 검색) / 탈퇴 시까지 보관 / 거부 시 로그인 기능 이용 불가</small></span>
+        </label>
+        <label class="consent-item">
+          <input type="checkbox" class="consent-req" data-consent="cross_border" />
+          <span>[필수] <a href="privacy.html#" target="_blank" rel="noopener">개인정보 국외 이전</a>에 동의합니다
+            <small class="consent-detail">Google·Supabase·PostHog·Vercel(미국)에 저장·처리 / 상세는 처리방침 2조</small></span>
+        </label>
+        <label class="consent-item">
+          <input type="checkbox" id="consent-analytics" data-consent="analytics" />
+          <span>[선택] 서비스 개선을 위한 이용 행태 분석에 동의합니다</span>
+        </label>
+      </div>
+      <div class="modal-footer consent-footer">
+        <button id="consent-continue" class="btn-primary" disabled>동의하고 구글 로그인</button>
+      </div>
+    </div>
   </div>
 
   <!-- 결과 테이블용 플로팅 가로 스크롤바 (테이블 하단이 화면 밖일 때 표시) -->

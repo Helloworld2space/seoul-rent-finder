@@ -192,7 +192,17 @@ frontend/
   `frontend/analytics.js`의 `POSTHOG_KEY`가 비어 있으면 전체 no-op).
   수집 이벤트: landing_start, search, favorite_added, action_click, custom_search, login_click.
 
-## 10. 합법성 메모
+## 10. 동의·약관·탈퇴
+
+- 로그인 전 동의 모달(필수: 만14세·이용약관·개인정보 수집이용·국외이전 / 선택: 행태 분석).
+  선택은 PostHog opt-in/out으로 반영. 동의 선택은 sessionStorage에 보관했다가 OAuth 복귀 후
+  `user_consents`에 버전과 함께 기록(입증용). 기존 가입자는 로그인 시 재동의 요구, 거부하면 로그아웃.
+- 약관 `terms.html`(중개업 아님·면책), 처리방침 `privacy.html`(국외이전 표·보호책임자) — 푸터 상시 노출.
+- 회원 탈퇴: `delete_user()` security definer RPC(supabase/consents.sql)로 본인 계정 삭제 —
+  favorites·user_consents는 FK cascade로 함께 파기. 버전 갱신 시 auth.js의 CONSENT_VERSION과
+  두 HTML의 시행일을 함께 올릴 것.
+
+## 11. 합법성 메모
 
 - 데이터 출처: 국토교통부 아파트 전월세 실거래가 (공공데이터포털 공식 API).
 - "현재 매물"이 아니라 "계약 완료·신고된 거래" 기록. 시세 파악·후보 좁히기 용도.
