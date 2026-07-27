@@ -9,7 +9,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, apikey, content-type',
+  // x-client-info는 supabase-js가 모든 요청에 자동으로 붙이는 헤더 — 빠뜨리면
+  // 브라우저가 CORS 사전요청(preflight)에서 실제 요청을 차단해 "Failed to send
+  // a request to the Edge Function" 로 보인다(원인이 서버 코드가 아니라 이 목록 누락).
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 Deno.serve(async (req) => {
