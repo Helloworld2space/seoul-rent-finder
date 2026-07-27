@@ -187,7 +187,7 @@ frontend/
 
 ## 9. 랜딩 · 이용 데이터
 
-- 첫 방문 시 index.html의 랜딩 섹션 표시, "시작하기" 후 localStorage(`rentli_landing_seen`)로 생략.
+- 진입 시 항상 index.html의 랜딩 섹션을 먼저 표시("시작하기"로 본문 진입). 단, 구글 로그인 복귀(URL의 access_token/code)에는 랜딩을 건너뛴다.
 - 이용 데이터: Vercel Analytics(트래픽, 대시보드에서 Enable 필요) + PostHog(행동 이벤트,
   `frontend/analytics.js`의 `POSTHOG_KEY`가 비어 있으면 전체 no-op).
   수집 이벤트: landing_start, search, favorite_added, action_click, custom_search, login_click.

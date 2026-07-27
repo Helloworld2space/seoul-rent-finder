@@ -473,19 +473,25 @@ document.getElementById('load-more-btn').addEventListener('click', () => {
   showPage(_currentDeals, state.page, true);
 });
 
-/* ── 랜딩 (첫 방문에만 표시) ──────────────────── */
+/* ── 랜딩 (진입 시 항상 표시) ─────────────────── */
+// 마크업 기본값이 "랜딩 보임 / 본문 숨김"이라 깜빡임 없이 랜딩이 먼저 보인다.
 (function setupLanding() {
   const landing = document.getElementById('landing');
   const main = document.querySelector('main');
-  const seen = localStorage.getItem('rentli_landing_seen');
-  if (!seen) {
-    landing.classList.remove('hidden');
-    main.classList.add('hidden');
-  }
-  document.getElementById('landing-start').addEventListener('click', () => {
-    localStorage.setItem('rentli_landing_seen', '1');
+
+  function enterApp() {
     landing.classList.add('hidden');
     main.classList.remove('hidden');
+  }
+
+  // 구글 로그인 후 되돌아온 경우엔 랜딩을 건너뛴다 (작업 흐름 유지).
+  // Supabase는 implicit flow면 #access_token=, PKCE면 ?code= 로 돌아온다.
+  if (/access_token=/.test(window.location.hash) || /[?&]code=/.test(window.location.search)) {
+    enterApp();
+  }
+
+  document.getElementById('landing-start').addEventListener('click', () => {
+    enterApp();
     Analytics.track('landing_start');
   });
 })();
