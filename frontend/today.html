@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>오늘의 집값은? — Rent.li</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+  <div id="app">
+    <header class="site-header">
+      <div class="header-row">
+        <div>
+          <h1>오늘의 집값은?</h1>
+          <p class="subtitle" id="basis-note">수도권 빌라·단독 전월세 시세 · 불러오는 중…</p>
+        </div>
+        <div class="auth-area">
+          <a href="index.html" class="btn-secondary">실거래 검색</a>
+          <a href="help.html" class="btn-secondary">이용 가이드</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- 지표·지역 선택 -->
+      <section class="search-panel">
+        <div class="filter-row">
+          <div class="field-group inline">
+            <label class="field-label">지표</label>
+            <div class="chips small" role="group" id="metric-chips">
+              <button class="chip active" data-metric="jeonseAvgDeposit">전세 보증금</button>
+              <button class="chip" data-metric="wolseAvgDeposit">월세 보증금</button>
+              <button class="chip" data-metric="wolseAvgRent">월세</button>
+            </div>
+          </div>
+          <div class="field-group inline">
+            <label class="field-label">지역</label>
+            <div class="chips small" role="group" id="region-chips">
+              <button class="chip active" data-region="all">수도권 전체</button>
+              <button class="chip" data-region="seoul">서울</button>
+              <button class="chip" data-region="gyeonggi">경기</button>
+              <button class="chip" data-region="incheon">인천</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 지도 -->
+      <section class="map-section">
+        <div id="map-wrap" class="map-wrap">
+          <svg id="map" role="img" aria-label="수도권 시세 지도"></svg>
+          <div id="map-tooltip" class="map-tooltip hidden"></div>
+        </div>
+        <div id="legend" class="legend"></div>
+        <p class="map-foot">
+          지역을 클릭하면 동별 시세를 볼 수 있습니다. 색이 없는 지역은 최근 3개월 거래가 없습니다.
+        </p>
+      </section>
+
+      <!-- 동별 표 -->
+      <section id="dong-section" class="stats-section hidden">
+        <h2 class="stats-title" id="dong-title"></h2>
+        <div class="table-wrapper">
+          <table class="stats-table">
+            <thead>
+              <tr>
+                <th rowspan="2">법정동</th>
+                <th colspan="2">전세</th>
+                <th colspan="3">월세</th>
+              </tr>
+              <tr>
+                <th>건수</th><th>평균 보증금</th>
+                <th>건수</th><th>평균 보증금</th><th>평균 월세</th>
+              </tr>
+            </thead>
+            <tbody id="dong-body"></tbody>
+          </table>
+        </div>
+        <p class="map-foot">거래 3건 미만인 동은 표본이 적어 평균이 실제 시세와 다를 수 있습니다.</p>
+      </section>
+
+      <div id="status-msg" class="status-msg hidden" role="status"></div>
+    </main>
+
+    <footer class="site-footer">
+      <a href="terms.html">이용약관</a> · <a href="privacy.html">개인정보 처리방침</a> · <a href="help.html">이용 가이드</a>
+      <span class="footer-note">
+        국토교통부 실거래가 기준 · 경계는 통계청 2018년 자료(화성·부천·인천 개편 지역은 근사 표시)
+      </span>
+    </footer>
+  </div>
+
+  <script src="analytics.js"></script>
+  <script src="today.js"></script>
+</body>
+</html>

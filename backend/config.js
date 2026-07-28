@@ -27,4 +27,13 @@ module.exports = {
   SEOUL_BROKER_SERVICE: 'landBizInfo',
   BROKER_PAGE_SIZE: 1000,
   BROKER_CACHE_TTL_MS: 24 * 60 * 60 * 1000,
+
+  // "오늘의 집값은?" 시세 통계 (없으면 해당 페이지만 비활성 — 나머지 기능 무영향)
+  SUPABASE_URL: process.env.SUPABASE_URL || 'https://xwmvozrdhvemokidcbww.supabase.co',
+  // service_role 키는 RLS를 우회하므로 절대 브라우저에 노출 금지 — 서버에서만 사용
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || null,
+  CRON_SECRET: process.env.CRON_SECRET || null,
+  // 지도에 집계할 유형 — 1인 가구 대상인 빌라·단독만 (아파트 제외)
+  STATS_TYPES: ['rh', 'sh'],
+  STATS_MONTHS: 3, // 동별 표본 확보를 위해 최근 3개월 누적 표시
 };

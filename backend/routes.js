@@ -1,8 +1,10 @@
 const { Router } = require('express');
-const { REGIONS, DISTRICTS } = require('./districts');
+const { REGIONS, DISTRICTS, CODE_TO_POLYGON, POLYGON_TO_CODES } = require('./districts');
 const { fetchRaw } = require('./molit-client');
 const { normalizeAll, PROPERTY_TYPE_LABELS } = require('./normalize');
 const broker = require('./broker-client');
+const priceStats = require('./price-stats');
+const { CRON_SECRET } = require('./config');
 
 const router = Router();
 
@@ -90,6 +92,86 @@ router.get('/brokers', async (req, res) => {
     scope: inDong.length > 0 ? 'dong' : 'district', // 폴백 여부 표시
     brokers,
   });
+});
+
+// GET /api/prices              → 지도용: 폴리곤별 시세 (최근 3개월 누적)
+// GET /api/prices?district=11440 → 그 구의 동별 시세
+// 저장된 통계만 읽는다 — 공공 API를 호출하지 않으므로 쿼터와 무관하다.
+router.get('/prices', async (req, res) => {
+  if (!priceStats.isEnabled()) {
+    return res.status(503).json({
+      error: '시세 데이터가 아직 준비되지 않았습니다. 관리자 설정이 필요합니다.',
+    });
+  }
+
+  const districtCode = String(req.query.district ?? '').trim();
+  if (districtCode && !DISTRICTS.some((d) => d.code === districtCode)) {
+    return res.status(400).json({ error: 'district는 유효한 자치구 코드여야 합니다.' });
+  }
+
+  try {
+    const rows = await priceStats.readStats(districtCode ? { districtCode } : {});
+
+    if (districtCode) {
+      // 동별: 같은 동의 여러 월·유형을 하나로 합친다
+      const byDong = new Map();
+      for (const r of rows) {
+        if (!byDong.has(r.dong)) byDong.set(r.dong, []);
+        byDong.get(r.dong).push(r);
+      }
+      const dongs = [...byDong.entries()]
+        .map(([dong, rs]) => ({ dong, ...priceStats.mergeRows(rs) }))
+        .filter((d) => d.jeonseCount + d.wolseCount > 0)
+        .sort((a, b) => b.jeonseCount + b.wolseCount - (a.jeonseCount + a.wolseCount));
+      return res.json({ district: districtCode, dongs });
+    }
+
+    // 지도용: 자치구 → 폴리곤으로 접어서 내려준다.
+    // (부천 3구·화성 4구처럼 여러 구가 한 폴리곤을 쓰면 건수 가중으로 합쳐진다)
+    const byPolygon = new Map();
+    for (const r of rows) {
+      const poly = CODE_TO_POLYGON[r.district_code];
+      if (!poly) continue;
+      if (!byPolygon.has(poly)) byPolygon.set(poly, []);
+      byPolygon.get(poly).push(r);
+    }
+    const polygons = [...byPolygon.entries()].map(([id, rs]) => ({
+      id,
+      districtCodes: POLYGON_TO_CODES[id] ?? [],
+      ...priceStats.mergeRows(rs),
+    }));
+
+    res.json({ polygons, updatedAt: await priceStats.lastUpdated() });
+  } catch (err) {
+    console.error('[routes] /api/prices 오류:', err.message);
+    res.status(502).json({ error: '시세 데이터를 불러오지 못했습니다.' });
+  }
+});
+
+// GET /api/cron/refresh-prices — 하루 1회 시세 수집 (Vercel Cron 전용)
+// 공공 API를 166회 호출하므로 아무나 부르지 못하게 CRON_SECRET으로 막는다.
+router.get('/cron/refresh-prices', async (req, res) => {
+  if (!CRON_SECRET) {
+    return res.status(503).json({ error: 'CRON_SECRET이 설정되지 않았습니다.' });
+  }
+  const auth = req.get('authorization') ?? '';
+  if (auth !== `Bearer ${CRON_SECRET}`) {
+    return res.status(401).json({ error: '인증 실패' });
+  }
+
+  // ?ym=202605 로 과거 월 백필 가능 (미지정 시 당월)
+  const ym = String(req.query.ym ?? '').trim();
+  if (ym && !/^\d{6}$/.test(ym)) {
+    return res.status(400).json({ error: 'ym은 YYYYMM 형식이어야 합니다.' });
+  }
+
+  try {
+    const result = await priceStats.refreshMonth(ym || undefined);
+    res.json(result);
+  } catch (err) {
+    console.error('[routes] /api/cron/refresh-prices 오류:', err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 /**

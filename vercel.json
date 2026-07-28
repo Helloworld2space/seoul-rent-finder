@@ -1,5 +1,11 @@
 {
   "version": 2,
   "builds": [{ "src": "backend/server.js", "use": "@vercel/node" }],
-  "routes": [{ "src": "/(.*)", "dest": "backend/server.js" }]
+  "routes": [{ "src": "/(.*)", "dest": "backend/server.js" }],
+  "crons": [
+    {
+      "path": "/api/cron/refresh-prices",
+      "schedule": "10 15 * * *"
+    }
+  ]
 }
