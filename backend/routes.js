@@ -97,16 +97,30 @@ router.get('/brokers', async (req, res) => {
 // GET /api/health — 배포·설정 진단용.
 // 어떤 커밋이 돌고 있는지, 필요한 환경변수가 서버에 도달했는지만 알려준다.
 // 값은 절대 노출하지 않고 설정 여부(true/false)만 응답한다.
-router.get('/health', (_req, res) => {
-  res.json({
+router.get('/health', async (_req, res) => {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+  const out = {
     commit: (process.env.VERCEL_GIT_COMMIT_SHA ?? 'local').slice(0, 7),
     env: {
       SERVICE_KEY: Boolean(process.env.SERVICE_KEY),
       SEOUL_API_KEY: Boolean(process.env.SEOUL_API_KEY),
-      SUPABASE_SERVICE_ROLE_KEY: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+      SUPABASE_SERVICE_ROLE_KEY: Boolean(key),
       CRON_SECRET: Boolean(process.env.CRON_SECRET),
     },
-  });
+    // 키가 잘못 붙여넣어졌는지(길이·형식) 판별하기 위한 최소 단서 — 값 자체는 노출하지 않는다
+    serviceRoleKeyShape: key
+      ? { length: key.length, prefix: key.slice(0, 3), hasWhitespace: /\s/.test(key) }
+      : null,
+  };
+  if (key) {
+    try {
+      await priceStats.lastUpdated();
+      out.supabase = 'ok';
+    } catch (err) {
+      out.supabase = err.message.slice(0, 200);
+    }
+  }
+  res.json(out);
 });
 
 // GET /api/prices              → 지도용: 폴리곤별 시세 (최근 3개월 누적)
