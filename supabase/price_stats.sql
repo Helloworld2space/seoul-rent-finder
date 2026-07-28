@@ -29,4 +29,9 @@ create index price_stats_lookup on price_stats (ym, district_code);
 alter table price_stats enable row level security;
 create policy "public read" on price_stats for select using (true);
 grant select on public.price_stats to anon, authenticated;
--- 쓰기 권한은 주지 않는다. 수집은 백엔드가 service_role 키로만 수행한다.
+
+-- 수집(백엔드)용 권한. service_role은 RLS는 우회하지만 테이블 GRANT는 별도로 필요하다
+-- (이 프로젝트는 기본 GRANT가 없어 빠뜨리면 "permission denied for table"이 난다).
+-- upsert는 INSERT ... ON CONFLICT DO UPDATE라 insert와 update가 모두 필요.
+grant select, insert, update on public.price_stats to service_role;
+-- anon·authenticated에는 쓰기 권한을 주지 않는다.
