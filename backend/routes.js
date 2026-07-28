@@ -94,6 +94,21 @@ router.get('/brokers', async (req, res) => {
   });
 });
 
+// GET /api/health — 배포·설정 진단용.
+// 어떤 커밋이 돌고 있는지, 필요한 환경변수가 서버에 도달했는지만 알려준다.
+// 값은 절대 노출하지 않고 설정 여부(true/false)만 응답한다.
+router.get('/health', (_req, res) => {
+  res.json({
+    commit: (process.env.VERCEL_GIT_COMMIT_SHA ?? 'local').slice(0, 7),
+    env: {
+      SERVICE_KEY: Boolean(process.env.SERVICE_KEY),
+      SEOUL_API_KEY: Boolean(process.env.SEOUL_API_KEY),
+      SUPABASE_SERVICE_ROLE_KEY: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+      CRON_SECRET: Boolean(process.env.CRON_SECRET),
+    },
+  });
+});
+
 // GET /api/prices              → 지도용: 폴리곤별 시세 (최근 3개월 누적)
 // GET /api/prices?district=11440 → 그 구의 동별 시세
 // 저장된 통계만 읽는다 — 공공 API를 호출하지 않으므로 쿼터와 무관하다.
