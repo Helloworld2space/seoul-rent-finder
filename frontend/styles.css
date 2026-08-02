@@ -380,6 +380,38 @@ body {
 .help-list { padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
 .help-link, .auth-area a.btn-secondary { text-decoration: none; display: inline-block; }
 
+/* ── 간단검색 ─────────────────────────────────── */
+.budget-preview { font-size: 13px; color: var(--color-text-muted); }
+.quick-budget { margin-top: 8px; }
+
+.match-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.match-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  background: var(--color-surface);
+}
+.match-card.near { opacity: 0.75; }
+.match-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.match-name { font-weight: 700; font-size: 14px; }
+.match-price { font-size: 13px; color: var(--color-text); margin-top: 6px; }
+.match-gap {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: #1a7a37;
+  background: #e8fdf0;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.match-gap.short { color: #a05c00; background: #fff4e5; }
+.match-actions { margin-top: 10px; }
+
 /* ── 시세 지도 ────────────────────────────────── */
 .map-section {
   background: var(--color-surface);

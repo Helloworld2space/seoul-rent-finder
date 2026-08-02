@@ -886,6 +886,19 @@ function fmtAmount(won) {
     districtRegionByName = Object.fromEntries(districts.map((d) => [d.name, d.region]));
     renderRegionTabs(regions);
     renderDistrictChips();
+
+    // 간단검색에서 넘어온 경우(?district=11440) 그 구를 선택한 채로 바로 조회한다
+    const wanted = new URLSearchParams(window.location.search).get('district');
+    const target = wanted && districts.find((d) => d.code === wanted);
+    if (target) {
+      selectedDistricts = new Set([target.code]);
+      activeRegion = target.region;
+      document.querySelectorAll('#region-tabs .region-tab').forEach((b) =>
+        b.classList.toggle('active', b.dataset.region === activeRegion));
+      renderDistrictChips();
+      document.getElementById('landing-start').click(); // 랜딩 건너뛰고 본문으로
+      document.getElementById('search-btn').click();
+    }
   } catch (err) {
     setStatus('구 목록을 불러오지 못했습니다. 서버가 실행 중인지 확인하세요.', true);
   }

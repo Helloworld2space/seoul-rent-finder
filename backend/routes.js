@@ -150,6 +150,22 @@ router.get('/prices', async (req, res) => {
       return res.json({ district: districtCode, dongs });
     }
 
+    // 간단검색용: 자치구 단위로 이름·지역과 함께 (?by=district)
+    if (req.query.by === 'district') {
+      const byDistrict = new Map();
+      for (const r of rows) {
+        if (!byDistrict.has(r.district_code)) byDistrict.set(r.district_code, []);
+        byDistrict.get(r.district_code).push(r);
+      }
+      const districts = DISTRICTS.filter((d) => byDistrict.has(d.code)).map((d) => ({
+        code: d.code,
+        name: d.name,
+        region: d.region,
+        ...priceStats.mergeRows(byDistrict.get(d.code)),
+      }));
+      return res.json({ districts, updatedAt: await priceStats.lastUpdated() });
+    }
+
     // 지도용: 자치구 → 폴리곤으로 접어서 내려준다.
     // (부천 3구·화성 4구처럼 여러 구가 한 폴리곤을 쓰면 건수 가중으로 합쳐진다)
     const byPolygon = new Map();
