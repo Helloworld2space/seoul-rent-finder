@@ -199,14 +199,29 @@ router.get('/cron/refresh-prices', async (req, res) => {
   }
   const targetYm = ym || priceStats.recentMonths(1)[0];
 
+  // ?part=0..3 으로 조각 지정 가능 (미지정 시 날짜에 따라 자동 선택)
+  const rawPart = req.query.part;
+  const part = rawPart === undefined ? undefined : Number(rawPart);
+  if (part !== undefined && !Number.isInteger(part)) {
+    return res.status(400).json({ error: 'part는 정수여야 합니다.' });
+  }
+
   try {
     if (!CRON_SECRET) {
-      const last = await priceStats.lastUpdatedForYm(targetYm);
+      // 조각 단위로 판정해야 백필(조각 0→1→2→3 연속 호출)이 막히지 않는다
+      const slice = priceStats.districtSlice(part);
+      const last = await priceStats.lastUpdatedForYm(
+        targetYm,
+        slice.districts.map((d) => d.code)
+      );
       if (last && Date.now() - new Date(last).getTime() < REFRESH_THROTTLE_MS) {
-        return res.json({ ym: targetYm, skipped: true, reason: '12시간 내 이미 수집됨', lastUpdated: last });
+        return res.json({
+          ym: targetYm, part: slice.part, skipped: true,
+          reason: '12시간 내 이미 수집됨', lastUpdated: last,
+        });
       }
     }
-    res.json(await priceStats.refreshMonth(targetYm));
+    res.json(await priceStats.refreshMonth(targetYm, part));
   } catch (err) {
     console.error('[routes] /api/cron/refresh-prices 오류:', err.message);
     res.status(500).json({ error: err.message });

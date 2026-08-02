@@ -4,6 +4,7 @@ const {
   SUPABASE_SERVICE_ROLE_KEY,
   STATS_TYPES,
   STATS_MONTHS,
+  STATS_PARTS,
 } = require('./config');
 const { DISTRICTS } = require('./districts');
 const { fetchRaw } = require('./molit-client');
@@ -180,13 +181,35 @@ async function lastUpdated() {
   return rows?.[0]?.updated_at ?? null;
 }
 
-/** 특정 월의 마지막 갱신 시각 (중복 수집 방지용) */
-async function lastUpdatedForYm(ym) {
-  const rows = await supabaseRequest(
-    'GET',
-    `price_stats?select=updated_at&ym=eq.${encodeURIComponent(ym)}&order=updated_at.desc&limit=1`
-  );
+/**
+ * 특정 월(+선택적으로 특정 자치구 묶음)의 마지막 갱신 시각. 중복 수집 방지용.
+ * @param {string} ym
+ * @param {string[]} [districtCodes]  주면 그 자치구들만 본다(분할 수집의 한 조각)
+ */
+async function lastUpdatedForYm(ym, districtCodes) {
+  let path = `price_stats?select=updated_at&ym=eq.${encodeURIComponent(ym)}`;
+  if (districtCodes?.length) {
+    path += `&district_code=in.(${districtCodes.join(',')})`;
+  }
+  const rows = await supabaseRequest('GET', `${path}&order=updated_at.desc&limit=1`);
   return rows?.[0]?.updated_at ?? null;
+}
+
+/**
+ * 분할 수집용 자치구 조각. 국토부 API가 느려(구 하나에 수 초) 83개를 한 번에
+ * 처리하면 서버리스 실행 시간을 초과한다. 며칠에 걸쳐 한 바퀴 돈다.
+ * @returns {{districts: object[], part: number, parts: number}}
+ */
+function districtSlice(part, parts = STATS_PARTS) {
+  const p = Number.isInteger(part) ? ((part % parts) + parts) % parts : dayBasedPart(parts);
+  const size = Math.ceil(DISTRICTS.length / parts);
+  return { districts: DISTRICTS.slice(p * size, (p + 1) * size), part: p, parts };
+}
+
+/** 날짜에 따라 조각을 돌아가며 고른다(크론이 매일 다른 구간을 맡도록) */
+function dayBasedPart(parts) {
+  const daysSinceEpoch = Math.floor(Date.now() / 86400000);
+  return daysSinceEpoch % parts;
 }
 
 /* ── 수집 (하루 1회) ──────────────────────────── */
@@ -197,27 +220,25 @@ async function lastUpdatedForYm(ym) {
  *
  * @param {string} ym  'YYYYMM' (미지정 시 당월)
  */
-async function refreshMonth(ym) {
+async function refreshMonth(ym, part) {
   if (!isEnabled()) throw new Error('SUPABASE_SERVICE_ROLE_KEY가 설정되지 않았습니다.');
   const targetYm = ym || recentMonths(1)[0];
+  const slice = districtSlice(part);
 
   let apiCalls = 0;
   let allRows = [];
 
-  // 공공 API에 한꺼번에 몰리지 않도록 유형별로 순차, 구는 소규모 병렬
+  // 국토부 API가 느리므로 조각 안에서는 최대한 병렬로 (유형은 순차)
   for (const type of STATS_TYPES) {
-    for (let i = 0; i < DISTRICTS.length; i += 8) {
-      const batch = DISTRICTS.slice(i, i + 8);
-      const results = await Promise.all(
-        batch.map(async (d) => {
-          const items = await fetchRaw(d.code, targetYm, type);
-          apiCalls++;
-          const deals = normalizeAll(items, d.code, type);
-          return aggregate(deals, { ym: targetYm, districtCode: d.code, propertyType: type });
-        })
-      );
-      allRows.push(...results.flat());
-    }
+    const results = await Promise.all(
+      slice.districts.map(async (d) => {
+        const items = await fetchRaw(d.code, targetYm, type);
+        apiCalls++;
+        const deals = normalizeAll(items, d.code, type);
+        return aggregate(deals, { ym: targetYm, districtCode: d.code, propertyType: type });
+      })
+    );
+    allRows.push(...results.flat());
   }
 
   // Supabase 요청 크기 제한을 피하려 나눠 보낸다
@@ -225,11 +246,20 @@ async function refreshMonth(ym) {
     await upsertStats(allRows.slice(i, i + 500));
   }
 
-  console.log(`[price-stats] ${targetYm} 수집 완료 — API ${apiCalls}회, ${allRows.length}행 저장`);
-  return { ym: targetYm, apiCalls, rows: allRows.length };
+  console.log(
+    `[price-stats] ${targetYm} ${slice.part + 1}/${slice.parts}조각 수집 완료 — API ${apiCalls}회, ${allRows.length}행 저장`
+  );
+  return {
+    ym: targetYm,
+    part: slice.part,
+    parts: slice.parts,
+    districts: slice.districts.length,
+    apiCalls,
+    rows: allRows.length,
+  };
 }
 
 module.exports = {
   aggregate, mergeRows, recentMonths,   // 순수함수
-  isEnabled, readStats, lastUpdated, lastUpdatedForYm, refreshMonth,
+  isEnabled, readStats, lastUpdated, lastUpdatedForYm, refreshMonth, districtSlice,
 };

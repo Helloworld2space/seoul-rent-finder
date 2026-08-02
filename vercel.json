@@ -1,6 +1,12 @@
 {
   "version": 2,
-  "builds": [{ "src": "backend/server.js", "use": "@vercel/node" }],
+  "builds": [
+    {
+      "src": "backend/server.js",
+      "use": "@vercel/node",
+      "config": { "maxDuration": 60 }
+    }
+  ],
   "routes": [{ "src": "/(.*)", "dest": "backend/server.js" }],
   "crons": [
     {
