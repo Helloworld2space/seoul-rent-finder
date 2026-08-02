@@ -180,6 +180,15 @@ async function lastUpdated() {
   return rows?.[0]?.updated_at ?? null;
 }
 
+/** 특정 월의 마지막 갱신 시각 (중복 수집 방지용) */
+async function lastUpdatedForYm(ym) {
+  const rows = await supabaseRequest(
+    'GET',
+    `price_stats?select=updated_at&ym=eq.${encodeURIComponent(ym)}&order=updated_at.desc&limit=1`
+  );
+  return rows?.[0]?.updated_at ?? null;
+}
+
 /* ── 수집 (하루 1회) ──────────────────────────── */
 
 /**
@@ -222,5 +231,5 @@ async function refreshMonth(ym) {
 
 module.exports = {
   aggregate, mergeRows, recentMonths,   // 순수함수
-  isEnabled, readStats, lastUpdated, refreshMonth,
+  isEnabled, readStats, lastUpdated, lastUpdatedForYm, refreshMonth,
 };

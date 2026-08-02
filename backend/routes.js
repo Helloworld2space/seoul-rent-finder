@@ -174,13 +174,22 @@ router.get('/prices', async (req, res) => {
 
 // GET /api/cron/refresh-prices — 하루 1회 시세 수집 (Vercel Cron 전용)
 // 공공 API를 166회 호출하므로 아무나 부르지 못하게 CRON_SECRET으로 막는다.
+// 보호 방식 두 가지 —
+//  ① CRON_SECRET이 설정돼 있으면 그 값을 요구한다(권장. Vercel Cron이 자동으로 붙여준다).
+//  ② 설정돼 있지 않으면 열어두되, 같은 월을 12시간 안에 다시 수집하지 않도록 막는다.
+//     환경변수가 빠져도 일일 갱신이 멈추지 않게 하기 위함이며, 최악의 경우에도
+//     외부인이 할 수 있는 일은 "하루 한 번 공개 통계 갱신"뿐이라 피해가 없다.
+const REFRESH_THROTTLE_MS = 12 * 60 * 60 * 1000;
+
 router.get('/cron/refresh-prices', async (req, res) => {
-  if (!CRON_SECRET) {
-    return res.status(503).json({ error: 'CRON_SECRET이 설정되지 않았습니다.' });
+  if (CRON_SECRET) {
+    const auth = req.get('authorization') ?? '';
+    if (auth !== `Bearer ${CRON_SECRET}`) {
+      return res.status(401).json({ error: '인증 실패' });
+    }
   }
-  const auth = req.get('authorization') ?? '';
-  if (auth !== `Bearer ${CRON_SECRET}`) {
-    return res.status(401).json({ error: '인증 실패' });
+  if (!priceStats.isEnabled()) {
+    return res.status(503).json({ error: 'SUPABASE_SERVICE_ROLE_KEY가 설정되지 않았습니다.' });
   }
 
   // ?ym=202605 로 과거 월 백필 가능 (미지정 시 당월)
@@ -188,10 +197,16 @@ router.get('/cron/refresh-prices', async (req, res) => {
   if (ym && !/^\d{6}$/.test(ym)) {
     return res.status(400).json({ error: 'ym은 YYYYMM 형식이어야 합니다.' });
   }
+  const targetYm = ym || priceStats.recentMonths(1)[0];
 
   try {
-    const result = await priceStats.refreshMonth(ym || undefined);
-    res.json(result);
+    if (!CRON_SECRET) {
+      const last = await priceStats.lastUpdatedForYm(targetYm);
+      if (last && Date.now() - new Date(last).getTime() < REFRESH_THROTTLE_MS) {
+        return res.json({ ym: targetYm, skipped: true, reason: '12시간 내 이미 수집됨', lastUpdated: last });
+      }
+    }
+    res.json(await priceStats.refreshMonth(targetYm));
   } catch (err) {
     console.error('[routes] /api/cron/refresh-prices 오류:', err.message);
     res.status(500).json({ error: err.message });
