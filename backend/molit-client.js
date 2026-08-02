@@ -11,6 +11,16 @@ const {
 // (type:lawdCd:ym) → { items, fetchedAt } — 일 1,000건 쿼터 보호용 캐시
 const cache = new Map();
 
+// 호출 실패 누적 횟수. 부분실패를 조용히 삼키는 구조라, 수집 결과가 0건일 때
+// "거래가 없음"인지 "API가 죽었음"인지 구분할 단서가 필요하다.
+let failureCount = 0;
+let lastFailure = null;
+
+/** 실패 통계 스냅샷 (수집 결과 진단용) */
+function failureStats() {
+  return { count: failureCount, last: lastFailure };
+}
+
 /**
  * 국토부 전월세 실거래가 API에서 한 (유형, 구, 월) 조합의 데이터를 모두 가져온다.
  * 페이지네이션을 처리해 전체 item[]을 반환. 결과는 TTL 동안 메모리 캐시.
@@ -37,6 +47,8 @@ async function fetchRaw(lawdCd, ym, type = 'apt') {
       data = await getJson(url);
     } catch (err) {
       console.error(`[molit] 호출 실패 type=${type} lawdCd=${lawdCd} ym=${ym} page=${pageNo}:`, err.message);
+      failureCount++;
+      lastFailure = `${type}/${lawdCd}/${ym}: ${err.message}`;
       failed = true;
       break; // 부분실패 격리 (미승인 유형의 HTTP 403 포함)
     }
@@ -44,6 +56,8 @@ async function fetchRaw(lawdCd, ym, type = 'apt') {
     const body = data?.response?.body;
     if (!body) {
       console.error(`[molit] 응답 형식 오류 type=${type} lawdCd=${lawdCd} ym=${ym}`, JSON.stringify(data).slice(0, 200));
+      failureCount++;
+      lastFailure = `${type}/${lawdCd}/${ym}: 응답 형식 오류`;
       failed = true;
       break;
     }
@@ -59,6 +73,8 @@ async function fetchRaw(lawdCd, ym, type = 'apt') {
         throw new Error(`공공 API 오류 [${code}]: ${header.resultMsg}`);
       }
       console.warn(`[molit] ${type} 유형 API 오류 [${code}] ${header.resultMsg} — 활용신청 여부를 확인하세요. 빈 결과로 처리.`);
+      failureCount++;
+      lastFailure = `${type}/${lawdCd}/${ym}: [${code}] ${header.resultMsg}`;
       failed = true;
       break;
     }
@@ -168,4 +184,4 @@ function toArray(val) {
   return Array.isArray(val) ? val : [val];
 }
 
-module.exports = { fetchRaw };
+module.exports = { fetchRaw, failureStats };

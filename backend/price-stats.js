@@ -7,7 +7,7 @@ const {
   STATS_PARTS,
 } = require('./config');
 const { DISTRICTS } = require('./districts');
-const { fetchRaw } = require('./molit-client');
+const { fetchRaw, failureStats } = require('./molit-client');
 const { normalizeAll } = require('./normalize');
 
 /**
@@ -225,6 +225,7 @@ async function refreshMonth(ym, part) {
   const targetYm = ym || recentMonths(1)[0];
   const slice = districtSlice(part);
 
+  const failuresBefore = failureStats().count;
   let apiCalls = 0;
   let allRows = [];
 
@@ -249,6 +250,7 @@ async function refreshMonth(ym, part) {
   console.log(
     `[price-stats] ${targetYm} ${slice.part + 1}/${slice.parts}조각 수집 완료 — API ${apiCalls}회, ${allRows.length}행 저장`
   );
+  const f = failureStats();
   return {
     ym: targetYm,
     part: slice.part,
@@ -256,6 +258,8 @@ async function refreshMonth(ym, part) {
     districts: slice.districts.length,
     apiCalls,
     rows: allRows.length,
+    failures: f.count - failuresBefore,   // 0건일 때 "거래 없음"과 "API 실패"를 구분
+    lastFailure: f.count > failuresBefore ? f.last : null,
   };
 }
 
