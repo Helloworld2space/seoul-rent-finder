@@ -380,7 +380,106 @@ body {
 .help-list { padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
 .help-link, .auth-area a.btn-secondary { text-decoration: none; display: inline-block; }
 
-/* ── 간단검색 ─────────────────────────────────── */
+/* ── 간단검색: 단계형 질문 ─────────────────────── */
+/* 실거래 검색과 달리 한 번에 한 질문만 보여준다 — 넓은 여백과 큰 글씨로 구분 */
+.wizard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px 24px;
+  box-shadow: var(--shadow-card);
+  max-width: 640px;
+  margin: 0 auto 16px;
+}
+.wizard-progress { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+.wizard-bar { flex: 1; height: 4px; background: #ececf0; border-radius: 999px; overflow: hidden; }
+.wizard-bar span {
+  display: block;
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+.wizard-count { font-size: 12px; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+
+.wizard-q {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.45;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.wizard-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.wizard-options-4 { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.wizard-option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+.wizard-option:hover {
+  border-color: var(--color-primary);
+  background: rgba(0, 122, 255, 0.04);
+}
+.wizard-option:active { transform: scale(0.98); }
+.wizard-option strong { font-size: 16px; }
+.wizard-option span { font-size: 12px; color: var(--color-text-muted); }
+
+.wizard-input-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+}
+.wizard-input {
+  width: 220px;
+  font-size: 32px;
+  font-weight: 700;
+  text-align: right;
+  padding: 6px 4px;
+  border: none;
+  border-bottom: 2px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font);
+  outline: none;
+  font-variant-numeric: tabular-nums;
+}
+.wizard-input:focus { border-bottom-color: var(--color-primary); }
+.wizard-unit { font-size: 15px; color: var(--color-text-muted); white-space: nowrap; }
+.wizard-preview {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  min-height: 19px;
+}
+.wizard-quick { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 18px; }
+
+.wizard-nav { display: flex; justify-content: space-between; gap: 8px; margin-top: 28px; }
+.wizard-nav .btn-primary { margin-top: 0; margin-left: auto; }
+
+/* 결과 화면 — 질문을 감추고 이것만 남는다 */
+.result-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.result-condition { font-size: 13px; color: var(--color-text-muted); margin-top: 2px; }
+
+/* ── 간단검색: 결과 카드 ───────────────────────── */
 .budget-preview { font-size: 13px; color: var(--color-text-muted); }
 .quick-budget { margin-top: 8px; }
 
