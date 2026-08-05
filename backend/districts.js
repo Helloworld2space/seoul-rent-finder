@@ -154,7 +154,34 @@ const POLYGON_TO_CODES = Object.entries(CODE_TO_POLYGON).reduce((acc, [code, pol
   return acc;
 }, {});
 
+/**
+ * 지도 폴리곤에 표시할 지역명.
+ * 통계청 2018년 원본 이름을 그대로 쓰면 실제와 어긋난다 —
+ * 인천은 시 이름이 없어 서울 중구와 구분되지 않고(둘 다 "중구"),
+ * 2026 개편분은 폐지된 옛 이름이며(동구→제물포구), 경기는 띄어쓰기가 없다(수원시장안구).
+ * 그래서 앱이 관리하는 정식 이름(DISTRICTS)에서 만들어 쓴다.
+ *
+ * 한 폴리곤에 여러 자치구가 묶인 경우(부천 3구, 화성 4구 등)는 묶어서 표기한다.
+ * @param {string} polygonId  통계청 코드
+ * @returns {string}
+ */
+function polygonLabel(polygonId) {
+  const names = (POLYGON_TO_CODES[polygonId] ?? []).map((c) => CODE_TO_NAME[c]).filter(Boolean);
+  if (names.length === 0) return '';
+  if (names.length === 1) return names[0];
+
+  const heads = names.map((n) => n.split(' ')[0]);
+  const sameHead = heads.every((h) => h === heads[0]);
+  // 부천시 원미/소사/오정구, 화성시 만세/효행/… → 폴리곤이 곧 그 시 전체다
+  if (sameHead && heads[0].endsWith('시')) return heads[0];
+  // 인천 서해구·검단구처럼 앞말이 시가 아니면 뒷부분만 묶는다
+  if (sameHead) {
+    return `${heads[0]} ${names.map((n) => n.slice(heads[0].length).trim()).join('·')}`;
+  }
+  return names.join('·');
+}
+
 module.exports = {
   REGIONS, DISTRICTS, CODE_TO_NAME, CODE_TO_REGION,
-  CODE_TO_POLYGON, POLYGON_TO_CODES,
+  CODE_TO_POLYGON, POLYGON_TO_CODES, polygonLabel,
 };

@@ -19,11 +19,7 @@ const OUT = path.join(__dirname, '..', 'frontend', 'data', 'sudogwon.geo.json');
 // 통계청 코드 앞 2자리: 11=서울, 23=인천, 31=경기
 const SUDOGWON_PREFIX = new Set(['11', '23', '31']);
 
-// 통계청 폴리곤 이름 → 폴리곤 ID(앱에서 쓰는 식별자).
-// 같은 시의 구가 통계청에선 붙여쓰기("수원시장안구")라 정규화한다.
-function polygonId(kostatName, kostatCode) {
-  return kostatCode; // 통계청 코드를 폴리곤 ID로 그대로 사용
-}
+const { polygonLabel } = require('../backend/districts');
 
 function fetchJson(url) {
   return new Promise((resolve, reject) => {
@@ -135,7 +131,9 @@ function processGeometry(geom, tol) {
     if (!geometry) continue;
     features.push({
       type: 'Feature',
-      properties: { id: polygonId(f.properties.name, code), name: f.properties.name },
+      // 표시명은 통계청 원본이 아니라 앱의 정식 지역명을 쓴다
+      // (원본은 인천에 시 이름이 없어 서울 중구와 겹치고, 2026 개편·띄어쓰기도 반영 안 됨)
+      properties: { id: code, name: polygonLabel(code) || f.properties.name },
       geometry,
     });
   }
