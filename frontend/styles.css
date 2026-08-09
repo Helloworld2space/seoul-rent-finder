@@ -380,6 +380,55 @@ body {
 .help-list { padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
 .help-link, .auth-area a.btn-secondary { text-decoration: none; display: inline-block; }
 
+/* ── 전월세 계산기 ─────────────────────────────── */
+.calc-panel { margin-bottom: 16px; }
+.calc-intro { font-size: 13px; color: var(--color-text-muted); margin-bottom: 18px; line-height: 1.6; }
+.calc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.calc-num { width: 100%; max-width: 220px; font-size: 15px; font-variant-numeric: tabular-nums; }
+
+.calc-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 4px; }
+.calc-col-title { font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+
+.calc-advanced { margin-top: 8px; }
+.calc-advanced summary {
+  font-size: 12px;
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: 6px 0;
+}
+.calc-note { font-size: 11px; color: var(--color-text-muted); line-height: 1.6; margin-top: 8px; }
+.calc-note a { color: var(--color-primary); }
+.calc-empty { font-size: 13px; color: var(--color-text-muted); padding: 12px 0; }
+
+.calc-result { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--color-border); }
+.calc-verdict { font-size: 15px; line-height: 1.6; margin-bottom: 14px; }
+.calc-year { font-size: 12px; color: var(--color-text-muted); }
+
+.calc-compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.calc-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  background: var(--color-bg);
+}
+/* 더 저렴한 쪽을 눈에 띄게 */
+.calc-card.win { border-color: var(--color-jeonse); background: #f2fdf6; }
+.calc-card-head { font-size: 12px; font-weight: 700; color: var(--color-text-muted); }
+.calc-total { font-size: 24px; font-weight: 800; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.calc-total span { font-size: 13px; font-weight: 400; color: var(--color-text-muted); margin-left: 2px; }
+.calc-breakdown { list-style: none; margin-top: 10px; display: flex; flex-direction: column; gap: 3px; }
+.calc-breakdown li { font-size: 12px; color: var(--color-text-muted); }
+
+.calc-warn {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: #fff4e5;
+  color: #a05c00;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 /* ── 간단검색: 단계형 질문 ─────────────────────── */
 /* 실거래 검색과 달리 한 번에 한 질문만 보여준다 — 넓은 여백과 큰 글씨로 구분 */
 .wizard {
