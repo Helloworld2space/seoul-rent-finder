@@ -380,6 +380,45 @@ body {
 .help-list { padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
 .help-link, .auth-area a.btn-secondary { text-decoration: none; display: inline-block; }
 
+/* ── 동네 리포트 ──────────────────────────────── */
+.report-select { max-width: 320px; width: 100%; }
+
+.report-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.report-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+/* 표본이 적은 동은 연하게 — 같은 무게로 읽히면 오해를 준다 */
+.report-card.sparse { opacity: 0.7; }
+
+.report-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.report-dong { font-size: 16px; font-weight: 700; }
+.report-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.badge-tag { background: #e5f0ff; color: #005bb5; }
+
+.report-summary {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--color-text);
+  margin-top: 10px;
+}
+.report-prices {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #f0f0f0;
+}
+.report-prices small { font-size: 11px; }
+
 /* ── 전월세 계산기 ─────────────────────────────── */
 /* 면책 고지 — 계산기 맨 위. 경고색이 아니라 안내색으로, 눈에 띄되 위압적이지 않게 */
 .calc-disclaimer {

@@ -31,7 +31,11 @@ function aggregate(deals, meta) {
   const bucketFor = (dong) => {
     let b = buckets.get(dong);
     if (!b) {
-      b = { jCount: 0, jDeposit: 0, wCount: 0, wDeposit: 0, wRent: 0 };
+      b = {
+        jCount: 0, jDeposit: 0, wCount: 0, wDeposit: 0, wRent: 0,
+        // 동네 성격용 — 면적·준공년도
+        areaSum: 0, areaCount: 0, yearSum: 0, yearCount: 0,
+      };
       buckets.set(dong, b);
     }
     return b;
@@ -49,6 +53,15 @@ function aggregate(deals, meta) {
         b.wDeposit += d.deposit;
         b.wRent += d.monthlyRent;
       }
+      if (d.area > 0) {
+        b.areaSum += d.area;
+        b.areaCount++;
+      }
+      // 준공년도는 일부 거래에 없다(약 2%) — 있는 것만 평균낸다
+      if (d.buildYear > 0) {
+        b.yearSum += d.buildYear;
+        b.yearCount++;
+      }
     }
   }
 
@@ -64,6 +77,10 @@ function aggregate(deals, meta) {
     wolse_count: b.wCount,
     wolse_avg_deposit: avg(b.wDeposit, b.wCount),
     wolse_avg_rent: avg(b.wRent, b.wCount),
+    // 동네 성격용
+    area_avg: b.areaCount > 0 ? Math.round((b.areaSum / b.areaCount) * 10) / 10 : 0,
+    build_year_avg: avg(b.yearSum, b.yearCount),
+    build_year_count: b.yearCount,
   }));
 }
 
@@ -77,12 +94,20 @@ function aggregate(deals, meta) {
  */
 function mergeRows(rows) {
   let jCount = 0, jDeposit = 0, wCount = 0, wDeposit = 0, wRent = 0;
+  let areaSum = 0, areaCount = 0, yearSum = 0, yearCount = 0;
   for (const r of rows) {
     jCount += r.jeonse_count;
     jDeposit += r.jeonse_avg_deposit * r.jeonse_count;
     wCount += r.wolse_count;
     wDeposit += r.wolse_avg_deposit * r.wolse_count;
     wRent += r.wolse_avg_rent * r.wolse_count;
+
+    // 면적은 거래 건수로, 준공년도는 값이 있던 건수로 각각 가중한다
+    const dealCount = r.jeonse_count + r.wolse_count;
+    areaSum += (r.area_avg ?? 0) * dealCount;
+    areaCount += (r.area_avg ?? 0) > 0 ? dealCount : 0;
+    yearSum += (r.build_year_avg ?? 0) * (r.build_year_count ?? 0);
+    yearCount += r.build_year_count ?? 0;
   }
   const avg = (sum, n) => (n > 0 ? Math.round(sum / n) : 0);
   return {
@@ -91,6 +116,8 @@ function mergeRows(rows) {
     wolseCount: wCount,
     wolseAvgDeposit: avg(wDeposit, wCount),
     wolseAvgRent: avg(wRent, wCount),
+    areaAvg: areaCount > 0 ? Math.round((areaSum / areaCount) * 10) / 10 : 0,
+    buildYearAvg: avg(yearSum, yearCount),
   };
 }
 
