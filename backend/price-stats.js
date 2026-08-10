@@ -11,7 +11,7 @@ const { fetchRaw, failureStats } = require('./molit-client');
 const { normalizeAll } = require('./normalize');
 
 /**
- * "오늘의 집값은?" 지역별 시세 집계.
+ * "오늘의 전/월세 평균" 지역별 시세 집계.
  * ★ 공공 API는 하루 1회 수집 시에만 호출한다. 페이지 조회는 저장된 값만 읽는다.
  */
 
@@ -155,9 +155,11 @@ function supabaseRequest(method, path, body, extraHeaders = {}) {
         },
       },
       (res) => {
-        let raw = '';
-        res.on('data', (c) => (raw += c));
+        // 한글이 청크 경계에서 잘려 깨지지 않도록 버퍼로 모아 한 번에 디코딩한다
+        const chunks = [];
+        res.on('data', (c) => chunks.push(c));
         res.on('end', () => {
+          const raw = Buffer.concat(chunks).toString('utf8');
           if (res.statusCode >= 400) {
             return reject(new Error(`Supabase ${res.statusCode}: ${raw.slice(0, 300)}`));
           }

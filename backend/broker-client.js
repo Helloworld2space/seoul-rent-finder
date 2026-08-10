@@ -84,9 +84,11 @@ function getPage(start, end) {
   return new Promise((resolve, reject) => {
     http
       .get(url, (res) => {
-        let raw = '';
-        res.on('data', (chunk) => (raw += chunk));
+        // 한글이 청크 경계에서 잘려 깨지지 않도록 버퍼로 모아 한 번에 디코딩한다
+        const chunks = [];
+        res.on('data', (chunk) => chunks.push(chunk));
         res.on('end', () => {
+          const raw = Buffer.concat(chunks).toString('utf8');
           if (res.statusCode >= 400) {
             return reject(new Error(`서울 열린데이터 HTTP 오류 ${res.statusCode}`));
           }

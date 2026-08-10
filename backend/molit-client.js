@@ -113,9 +113,13 @@ function getJson(url) {
     const lib = url.startsWith('https') ? https : http;
     lib
       .get(url, { headers: { Accept: 'application/json' } }, (res) => {
-        let raw = '';
-        res.on('data', (chunk) => (raw += chunk));
+        // 청크를 문자열로 바로 이어붙이면 안 된다 — 한글은 3바이트라
+        // 글자가 청크 경계에서 잘리면 조각마다 따로 디코딩돼 깨진다(구��동).
+        // 버퍼로 모았다가 한 번에 디코딩한다.
+        const chunks = [];
+        res.on('data', (chunk) => chunks.push(chunk));
         res.on('end', () => {
+          const raw = Buffer.concat(chunks).toString('utf8');
           // HTTP 오류 상태 코드 처리
           if (res.statusCode >= 400) {
             console.error(`[molit] HTTP ${res.statusCode} 오류. 응답:`, raw.slice(0, 300));
