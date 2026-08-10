@@ -33,5 +33,6 @@ grant select on public.price_stats to anon, authenticated;
 -- 수집(백엔드)용 권한. service_role은 RLS는 우회하지만 테이블 GRANT는 별도로 필요하다
 -- (이 프로젝트는 기본 GRANT가 없어 빠뜨리면 "permission denied for table"이 난다).
 -- upsert는 INSERT ... ON CONFLICT DO UPDATE라 insert와 update가 모두 필요.
-grant select, insert, update on public.price_stats to service_role;
+-- delete는 이름이 깨진 과거 행 정리(cleanupCorruptedNames)에 필요하다.
+grant select, insert, update, delete on public.price_stats to service_role;
 -- anon·authenticated에는 쓰기 권한을 주지 않는다.
