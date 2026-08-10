@@ -185,6 +185,26 @@ function upsertStats(rows) {
   });
 }
 
+/**
+ * 이름이 깨진 행을 지운다.
+ *
+ * 과거에 응답 청크를 문자열로 이어붙여(=한글이 경계에서 잘려) 저장된 동 이름에는
+ * U+FFFD(대체 문자)가 섞여 있다. dong이 기본키의 일부라 재수집 upsert로는
+ * 덮어써지지 않고 잘못된 이름의 행이 그대로 남으므로 따로 지워야 한다.
+ * 멱등하며, 정상 데이터에는 U+FFFD가 들어갈 수 없어 오삭제 위험이 없다.
+ *
+ * @returns {Promise<number>} 지운 행 수
+ */
+async function cleanupCorruptedNames() {
+  const rows = await supabaseRequest(
+    'DELETE',
+    `price_stats?dong=like.*${encodeURIComponent('�')}*`,
+    null,
+    { Prefer: 'return=representation' }
+  );
+  return rows?.length ?? 0;
+}
+
 /** 최근 STATS_MONTHS개월치 조회. districtCode를 주면 그 구의 동별, 없으면 전 구 합계. */
 async function readStats({ districtCode } = {}) {
   const months = recentMonths(STATS_MONTHS);
@@ -295,4 +315,5 @@ async function refreshMonth(ym, part) {
 module.exports = {
   aggregate, mergeRows, recentMonths,   // 순수함수
   isEnabled, readStats, lastUpdated, lastUpdatedForYm, refreshMonth, districtSlice,
+  cleanupCorruptedNames,
 };

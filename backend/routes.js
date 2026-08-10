@@ -223,6 +223,10 @@ router.get('/cron/refresh-prices', async (req, res) => {
   }
 
   try {
+    // 이름이 깨진 행 정리 — 수집을 건너뛰더라도 화면에서 즉시 사라지도록 스로틀보다 먼저 한다.
+    // 멱등하고 비용이 낮아(DELETE 1회) 매 호출 실행해도 무방하다.
+    const cleaned = await priceStats.cleanupCorruptedNames();
+
     if (!CRON_SECRET) {
       // 조각 단위로 판정해야 백필(조각 0→1→2→3 연속 호출)이 막히지 않는다
       const slice = priceStats.districtSlice(part);
@@ -233,11 +237,11 @@ router.get('/cron/refresh-prices', async (req, res) => {
       if (last && Date.now() - new Date(last).getTime() < REFRESH_THROTTLE_MS) {
         return res.json({
           ym: targetYm, part: slice.part, skipped: true,
-          reason: '12시간 내 이미 수집됨', lastUpdated: last,
+          reason: '12시간 내 이미 수집됨', lastUpdated: last, cleaned,
         });
       }
     }
-    res.json(await priceStats.refreshMonth(targetYm, part));
+    res.json({ ...(await priceStats.refreshMonth(targetYm, part)), cleaned });
   } catch (err) {
     console.error('[routes] /api/cron/refresh-prices 오류:', err.message);
     res.status(500).json({ error: err.message });
