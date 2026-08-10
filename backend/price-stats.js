@@ -193,16 +193,24 @@ function upsertStats(rows) {
  * 덮어써지지 않고 잘못된 이름의 행이 그대로 남으므로 따로 지워야 한다.
  * 멱등하며, 정상 데이터에는 U+FFFD가 들어갈 수 없어 오삭제 위험이 없다.
  *
- * @returns {Promise<number>} 지운 행 수
+ * 실패해도 예외를 던지지 않는다 — 정리는 수집의 부수적인 일이라, 여기서 막히면
+ * 정작 중요한 일일 수집까지 멈춘다(DELETE 권한이 없으면 403이 난다).
+ *
+ * @returns {Promise<number|string>} 지운 행 수, 실패 시 사유 문자열
  */
 async function cleanupCorruptedNames() {
-  const rows = await supabaseRequest(
-    'DELETE',
-    `price_stats?dong=like.*${encodeURIComponent('�')}*`,
-    null,
-    { Prefer: 'return=representation' }
-  );
-  return rows?.length ?? 0;
+  try {
+    const rows = await supabaseRequest(
+      'DELETE',
+      `price_stats?dong=like.*${encodeURIComponent('�')}*`,
+      null,
+      { Prefer: 'return=representation' }
+    );
+    return rows?.length ?? 0;
+  } catch (err) {
+    console.error('[price-stats] 깨진 이름 정리 실패:', err.message);
+    return `실패: ${err.message.slice(0, 120)}`;
+  }
 }
 
 /** 최근 STATS_MONTHS개월치 조회. districtCode를 주면 그 구의 동별, 없으면 전 구 합계. */
@@ -218,7 +226,9 @@ async function readStats({ districtCode } = {}) {
     params.set('dong', 'eq.'); // 구 합계 행만
   }
   const rows = await supabaseRequest('GET', `price_stats?${params}`);
-  return rows ?? [];
+  // 이름이 깨진 행은 화면에 내보내지 않는다. cleanupCorruptedNames()가 지우지만,
+  // 삭제 권한이 없거나 아직 정리 전이어도 사용자에게는 보이지 않아야 한다.
+  return (rows ?? []).filter((r) => !String(r.dong ?? '').includes('�'));
 }
 
 /** 저장된 데이터의 마지막 갱신 시각 */
